@@ -26,7 +26,7 @@ struct Options {
                                                 {"iterations", optional_argument, 0, 'I'},
                                                 {0,0,0,0}};
 
-        while(( opt = getopt_long(argc, argv, "", long_options, &option_index) ) != EOF ) {
+        while(( opt = getopt_long(argc, argv, "di:o:I:", long_options, &option_index) ) != EOF ) {
             switch (opt) {
                 case 'd':
                     debug = true;
