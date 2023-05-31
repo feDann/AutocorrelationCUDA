@@ -6,7 +6,7 @@
 
 #define DEBUG false
 #define ITERATIONS 1
-#define PARSE_FILE true
+#define PARSE_FILE false
 #define INPUT_FILE "../input/100.csv"
 #define OUTPUT_FILE "out.csv"
 
@@ -14,6 +14,7 @@
 struct Options {
     uint iterations = ITERATIONS;
     int debug = DEBUG;
+    int parse_file = PARSE_FILE;
     std::string input_file = INPUT_FILE;
     std::string output_file = OUTPUT_FILE;
 
@@ -33,6 +34,7 @@ struct Options {
                     break;
                 case 'i':
                     input_file = optarg;
+                    parse_file = true;
                     break;
                 case 'o':
                     output_file = optarg;

@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "Definitions.h"
+#include "options.hpp"
 
 
 namespace AutocorrelationCUDA {
@@ -44,16 +45,16 @@ class ResultArray final {
 	/**
 	* @brief Creates an array on the CUDA GPU of size SENSORS * MAX_LAG and fills it with 0. Then creates the same array on the host memory.
 	**/
-	__host__ ResultArray() {
+	__host__ ResultArray(Options &options) {
 
-		std::cout << "\ninitializing ResultArray...\n";
+		if (options.debug) std::cout << "Initializing ResultArray..." << std::endl;
 
-		 cudaMalloc(&data, SENSORS * MAX_LAG * sizeof(uint32));
-		 cudaMemset(data, 0, SENSORS * MAX_LAG * sizeof(uint32));
+		cudaMalloc(&data, SENSORS * MAX_LAG * sizeof(uint32));
+		cudaMemset(data, 0, SENSORS * MAX_LAG * sizeof(uint32));
 
-		 hostData = (uint32*)malloc(SENSORS * MAX_LAG * sizeof(uint32));
+		hostData = (uint32*)malloc(SENSORS * MAX_LAG * sizeof(uint32));
 
-		 std::cout << "\nResultArray done!\n";
+		if (options.debug) std::cout << "ResultArray done!" << std::endl;
 	}
 
 

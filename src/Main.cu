@@ -42,13 +42,14 @@ int gettimeofday(struct timeval* tp, struct timezone* tzp)
 
 #include "DataFile.h"
 #include "Timer.h"
+#include "options.hpp"
 
 
 
 using namespace AutocorrelationCUDA;
 
 
-
+void saveOutput();
 __global__ void autocorrelate(SensorsDataPacket packet, BinGroupsMultiSensorMemory binStructure, uint32 instantsProcessed, ResultArray out);
 
 
@@ -76,22 +77,26 @@ namespace AutocorrelationCUDA {
 }
 
 
-int main() {
+
+
+int main(int argc, char* argv[]) {
+	Options options = Options(argc, argv);
+
 	cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 	cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
 
+
 	//open file where data is stored
-	//std::unique_ptr<AutocorrelationCUDA::CudaInput<int>> dataFile = std::make_unique<AutocorrelationCUDA::InputVector<int>>("", "test1");
-	
+	//std::unique_ptr<AutocorrelationCUDA::CudaInput<int>> dataFile = std::make_unique<AutocorrelationCUDA::InputVector<int>>("", "test1");	
 
 	//create array where to put new data for the GPU
-	SensorsDataPacket inputArray;
+	SensorsDataPacket inputArray(options);
 
 	//array in GPU of the bin groups structure
-	BinGroupsMultiSensorMemory binStructure;
+	BinGroupsMultiSensorMemory binStructure(options);
 
 	//output array to store results in GPU
-	auto out = binStructure.generateResultArray();
+	auto out = binStructure.generateResultArray(options);
 
 
 	dim3 numberOfBlocks = SENSORS / SENSORS_PER_BLOCK; //number of blocks active on the GPU
@@ -125,14 +130,14 @@ int main() {
 	}
 	
 	out.download();	
-	std::cout << "\Kernel called " << timesCalled << " times\n";
-	for (int sensor = 0; sensor < 3; ++sensor) {
-		std::cout << "\n\n\t======= SENSOR " << sensor << " =======\n";
+	// std::cout << "\Kernel called " << timesCalled << " times\n";
+	// for (int sensor = 0; sensor < 3; ++sensor) {
+	// 	std::cout << "\n\n\t======= SENSOR " << sensor << " =======\n";
 
-		for (int lag = 0; lag < MAX_LAG; ++lag) {
-			std::cout << "\n\t" << lag+1 << " --> " << out.get(sensor, lag);
-		}
-	}
+	// 	for (int lag = 0; lag < MAX_LAG; ++lag) {
+	// 		std::cout << "\n\t" << lag+1 << " --> " << out.get(sensor, lag);
+	// 	}
+	// }
 
 	//write output to file
 	//AutocorrelationCUDA::DataFile<std::uint_fast32_t>::write(out);
@@ -142,6 +147,7 @@ int main() {
 }
 
 
+void saveOutput() {};
 
 
 /**

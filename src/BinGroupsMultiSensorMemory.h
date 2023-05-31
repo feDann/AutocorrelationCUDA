@@ -10,6 +10,7 @@
 
 #include "Definitions.h"
 #include "ResultArray.h"
+#include "options.hpp"
 
 
 
@@ -129,26 +130,26 @@ class BinGroupsMultiSensorMemory final {
 	/**
 	 * @brief Creates the structure described in the class description in the GPU global memory, and initializes it with zeroes.
 	 */
-	__host__ BinGroupsMultiSensorMemory() {
+	__host__ BinGroupsMultiSensorMemory(Options &options) {
 		
-		std::cout << "\ninitializing BinGroupMultiSensor...\n";
+		if (options.debug) std::cout << "Initializing BinGroupMultiSensor..." << std::endl;
 
 		//create matrix for data on GPU and fill it with 0
-		std::cout << "\nallocating data area on GPU\n";
+		if (options.debug) std::cout << "Allocating data area on GPU" << std::endl;
 		cudaMalloc(&data, GROUP_SIZE * GROUPS_PER_SENSOR * SENSORS * sizeof(uint16));
 		cudaMemset(data, 0, GROUP_SIZE * GROUPS_PER_SENSOR * SENSORS * sizeof(uint16));
 
 		//create matrix for zero delay data on GPU and fill it with 0
-		std::cout << "\allocating zero delay area on GPU\n";
+		if (options.debug) std::cout << "Allocating zero delay area on GPU" << std::endl;
 		cudaMalloc(&zeroDelays, GROUPS_PER_SENSOR * SENSORS * sizeof(uint16));
 		cudaMemset(zeroDelays, 0, GROUPS_PER_SENSOR * SENSORS * sizeof(uint16));
 
 		//create matrix for accumulator positions for each group on GPU and fill it with 0
-		std::cout << "\nallocating accumulators on GPU\n";
+		if (options.debug) std::cout << "Allocating accumulators on GPU" << std::endl;
 		cudaMalloc(&accumulatorsPos, GROUPS_PER_SENSOR * SENSORS * sizeof(uint16));
 		cudaMemset(accumulatorsPos, 0, GROUPS_PER_SENSOR * SENSORS * sizeof(uint16));
 
-		std::cout << "\nBinGroupMultiSensor done!\n";
+		if (options.debug) std::cout << "BinGroupMultiSensor done!" << std::endl;
 	}
 
 
@@ -157,8 +158,8 @@ class BinGroupsMultiSensorMemory final {
 	 * @brief Generates a ResultArray object with the right dimensions for this BinGroupsMultiSensorMemory.
 	 * @return A ResultArray object with the right dimensions for this BinGroupsMultiSensorMemory.
 	 */
-	__host__ ResultArray generateResultArray() {
-		return ResultArray();
+	__host__ ResultArray generateResultArray(Options &options) {
+		return ResultArray(options);
 	}
 
 

@@ -8,7 +8,7 @@
 #include <iostream>
 
 #include "Definitions.h"
-
+#include "options.hpp"
 
 namespace AutocorrelationCUDA {
 
@@ -41,14 +41,14 @@ class SensorsDataPacket final {
 	/**
 	* @brief Creates the array containing the data on GPU, and initializes it with 0.
 	**/
-	__host__ SensorsDataPacket() {
+	__host__ SensorsDataPacket(Options &options) {
 		
-		std::cout << "\ninitializing SensorsDataPacket...\n";
+		if (options.debug) std::cout << "Initializing SensorsDataPacket..." << std::endl;
 
 		cudaMalloc(&data, SENSORS * INSTANTS_PER_PACKET * sizeof(uint8));
 		cudaMemset(data, 0, SENSORS * INSTANTS_PER_PACKET);
 
-		std::cout << "\nSensorsDataPacket done!\n";
+		if (options.debug) std::cout << "SensorsDataPacket done!" << std::endl;
 	}
 
 
