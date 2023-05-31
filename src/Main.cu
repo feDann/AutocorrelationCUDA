@@ -43,13 +43,13 @@ int gettimeofday(struct timeval* tp, struct timezone* tzp)
 #include "DataFile.h"
 #include "Timer.h"
 #include "options.hpp"
+#include "csvParser.hpp"
 
 
 
 using namespace AutocorrelationCUDA;
 
 
-void saveOutput();
 __global__ void autocorrelate(SensorsDataPacket packet, BinGroupsMultiSensorMemory binStructure, uint32 instantsProcessed, ResultArray out);
 
 
@@ -81,22 +81,25 @@ namespace AutocorrelationCUDA {
 
 int main(int argc, char* argv[]) {
 	Options options = Options(argc, argv);
+	std::vector<uint8> input;
 
 	cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 	cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
 
-
-	//open file where data is stored
-	//std::unique_ptr<AutocorrelationCUDA::CudaInput<int>> dataFile = std::make_unique<AutocorrelationCUDA::InputVector<int>>("", "test1");	
-
-	//create array where to put new data for the GPU
 	SensorsDataPacket inputArray(options);
-
-	//array in GPU of the bin groups structure
 	BinGroupsMultiSensorMemory binStructure(options);
-
-	//output array to store results in GPU
 	auto out = binStructure.generateResultArray(options);
+
+
+	if (options.parse_file){
+		input = utils::parseCSV<uint8>(options.input_file);
+	} else {
+	for (int i = 0; i < INSTANTS_PER_PACKET; ++i) {
+		for (int j = 0; j < SENSORS; ++j) {
+			input.push_back((i%7) +1);
+		}
+	}
+	}
 
 
 	dim3 numberOfBlocks = SENSORS / SENSORS_PER_BLOCK; //number of blocks active on the GPU
@@ -109,35 +112,26 @@ int main(int argc, char* argv[]) {
 									      return ((double)tp.tv_sec + (double)tp.tv_usec * 0.000001);}};
 	
 
-	std::vector<uint8> dataDebug(SENSORS * INSTANTS_PER_PACKET);
-	for (int i = 0; i < INSTANTS_PER_PACKET; ++i) {
-		for (int j = 0; j < SENSORS; ++j) {
-			dataDebug[i*SENSORS + j] = (i%7) +1;
-		}
-	}
 
 	uint32 timesCalled; //counter
 	timer.start();
-	for(timesCalled = 0; timesCalled < REPETITIONS; ++timesCalled) {
-		inputArray.setNewDataPacket(dataDebug); //store in GPU memory a new block of data to be processed
-		//inputArray.setNewDataPacket(dataFile->read(sensors * instantsPerPacket)); //store in GPU memory a new block of data to be processed
-		//cudaDeviceSynchronize();
-		//timer.getInterval();
-		//timer.start();
+	for(timesCalled = 0; timesCalled < options.iterations; ++timesCalled) {
+		inputArray.setNewDataPacket(input); //store in GPU memory a new block of data to be processed
 		autocorrelate <<< numberOfBlocks, threadsPerBlock >>> (inputArray, binStructure, timesCalled * INSTANTS_PER_PACKET, out);
 		cudaDeviceSynchronize();	
 		timer.getInterval();
 	}
 	
-	out.download();	
-	// std::cout << "\Kernel called " << timesCalled << " times\n";
-	// for (int sensor = 0; sensor < 3; ++sensor) {
-	// 	std::cout << "\n\n\t======= SENSOR " << sensor << " =======\n";
-
-	// 	for (int lag = 0; lag < MAX_LAG; ++lag) {
-	// 		std::cout << "\n\t" << lag+1 << " --> " << out.get(sensor, lag);
-	// 	}
-	// }
+	out.download();	// Copy array of results from device memory to host memory
+	if (options.debug) std::cout << "Kernel called " << timesCalled << " times" << std::endl;
+	for (int lag = 0; lag < MAX_LAG; lag++){
+		std::cout << lag ;
+		for (int sensor = 0; sensor< SENSORS; sensor++){
+			auto value = out.get(sensor, lag);
+			std::cout << ',' << value;
+		}
+		std::cout << std::endl;
+	}
 
 	//write output to file
 	//AutocorrelationCUDA::DataFile<std::uint_fast32_t>::write(out);
@@ -145,10 +139,6 @@ int main(int argc, char* argv[]) {
 	cudaDeviceReset();
 	return 0;
 }
-
-
-void saveOutput() {};
-
 
 /**
 * @brief Calculates the autocorrelation of the data in the packet. At the end of the processing it copies it to the host device.

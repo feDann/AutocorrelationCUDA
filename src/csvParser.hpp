@@ -3,9 +3,24 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <stdexcept>
 
 
 namespace utils {
+
+    template <typename T> 
+    T convertTo(const std::string &cell) {
+        std::istringstream ss(cell);
+        T value;
+
+        ss >> value;
+
+        if (ss.fail()){
+            throw std::runtime_error("ERROR: Could not convert content to type");
+        }
+
+        return value;
+    }
 
     template <typename T>
     std::vector<T> parseCSVLine(const std::string &line){
@@ -14,7 +29,7 @@ namespace utils {
         std::string cell;
 
         while(std::getline(lineStream, cell, ',')){
-            result.push_back((T) stod(cell));
+            result.push_back(convertTo<T>(cell));
         }
 
         return result;
