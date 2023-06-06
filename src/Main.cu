@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
 	dim3 threads_per_block {GROUP_SIZE, SENSORS_PER_BLOCK};
 	
 	//timer
-	Timer timer{[](std::vector<double> data){DataFile<double>::write(data, "out_timer.txt");},
+	Timer timer{[options](std::vector<double> data){DataFile<double>::write(data, options.output_file);},
 									 [](){struct timeval tp;
 									      gettimeofday(&tp, NULL);
 									      return ((double)tp.tv_sec + (double)tp.tv_usec * 0.000001);}};
