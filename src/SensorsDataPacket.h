@@ -42,11 +42,13 @@ class SensorsDataPacket final {
 	* @brief Creates the array containing the data on GPU, and initializes it with 0.
 	**/
 	__host__ SensorsDataPacket(Options &options) {
+
+		instants_per_packets = options.packets;
 		
 		if (options.debug) std::cout << "Initializing SensorsDataPacket..." << std::endl;
 
-		cudaMalloc(&data, SENSORS * INSTANTS_PER_PACKET * sizeof(uint8));
-		cudaMemset(data, 0, SENSORS * INSTANTS_PER_PACKET);
+		cudaMalloc(&data, SENSORS * instants_per_packets * sizeof(uint8));
+		cudaMemset(data, 0, SENSORS * instants_per_packets);
 
 		if (options.debug) std::cout << "SensorsDataPacket done!" << std::endl;
 	}
@@ -71,7 +73,7 @@ class SensorsDataPacket final {
 	* @param newData Reference to the new packet to be uploaded.
 	**/
 	__host__ void setNewDataPacket(const std::vector<uint8>& newData) {
-		cudaMemcpy(data, newData.data(), SENSORS * INSTANTS_PER_PACKET * sizeof(uint8), cudaMemcpyHostToDevice);
+		cudaMemcpy(data, newData.data(), SENSORS * instants_per_packets * sizeof(uint8), cudaMemcpyHostToDevice);
 	}
 
 
@@ -80,6 +82,7 @@ class SensorsDataPacket final {
 	private:
 
 	uint8* data;
+	uint16 instants_per_packets;
 
 };
 }

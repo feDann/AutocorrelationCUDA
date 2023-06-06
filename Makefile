@@ -12,6 +12,6 @@ all: main
 clean:
 	rm -f *.o main out_data.txt timer_out.txt
 
-main: src/CudaInput.h src/InputVector.h src/BinGroupsMultiSensorMemory.h  src/DataFile.h  src/Timer.h src/Main.cu src/SensorsDataPacket.h src/ResultArray.h src/options.hpp src/csvParser.hpp
+main: src/CudaInput.h src/InputVector.h src/BinGroupsMultiSensorMemory.h  src/DataFile.h  src/Timer.h src/Main.cu src/SensorsDataPacket.h src/ResultArray.h src/options.hpp src/utils.hpp src/Definitions.h
 	$(NVCC) $(CUDAFLAGS) src/Main.cu -o main
 

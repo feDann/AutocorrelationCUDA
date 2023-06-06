@@ -35,12 +35,6 @@ constexpr uint8 GROUP_SIZE = 32;
 **/
 constexpr uint16 REPETITIONS = 1;
 
-/**
-* @brief Number of values in each packet sent to the GPU.
-**/
-constexpr uint32 INSTANTS_PER_PACKET = 400;
-
-
 
 constexpr uint16 ACC_POS_START = SENSORS_PER_BLOCK * GROUPS_PER_SENSOR * GROUP_SIZE;
 

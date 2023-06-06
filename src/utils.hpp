@@ -59,4 +59,25 @@ namespace utils {
 
     }
 
+
+    std::vector<uint8_t> generateRandomData(const int instants, const int sensors) {
+        std::vector<uint8_t> result;
+
+        for (int i = 0; i < instants; ++i) {
+            for (int j = 0; j < sensors; ++j) {
+                result.push_back((i%7) +1);
+            }
+        }
+        return result;
+    }
+
+    template<typename T>
+    std::vector<T> slice(std::vector<T> const &v, int m, int n)
+    {
+        auto first = v.cbegin() + m;
+        auto last = v.cbegin() + n + 1;
+    
+        std::vector<T> vec(first, last);
+        return vec;
+    }
 }

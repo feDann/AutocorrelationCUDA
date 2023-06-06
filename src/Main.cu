@@ -43,14 +43,14 @@ int gettimeofday(struct timeval* tp, struct timezone* tzp)
 #include "DataFile.h"
 #include "Timer.h"
 #include "options.hpp"
-#include "csvParser.hpp"
+#include "utils.hpp"
 
 
 
 using namespace AutocorrelationCUDA;
 
 
-__global__ void autocorrelate(SensorsDataPacket packet, BinGroupsMultiSensorMemory binStructure, uint32 instantsProcessed, ResultArray out);
+__global__ void autocorrelate(SensorsDataPacket packet, BinGroupsMultiSensorMemory binStructure, uint32 instantsProcessed, uint32 instants_per_packet, ResultArray out);
 
 
 namespace AutocorrelationCUDA {
@@ -83,27 +83,33 @@ int main(int argc, char* argv[]) {
 	Options options = Options(argc, argv);
 	std::vector<uint8> input;
 
-	cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
-	cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
-
-	SensorsDataPacket inputArray(options);
-	BinGroupsMultiSensorMemory binStructure(options);
-	auto out = binStructure.generateResultArray(options);
-
-
+	// Parse or generate input
 	if (options.parse_file){
 		input = utils::parseCSV<uint8>(options.input_file);
 	} else {
-	for (int i = 0; i < INSTANTS_PER_PACKET; ++i) {
-		for (int j = 0; j < SENSORS; ++j) {
-			input.push_back((i%7) +1);
-		}
-	}
+		input = utils::generateRandomData(options.packets, SENSORS);
 	}
 
+	uint32 total_instants = input.size() / SENSORS;
+	uint32 total_packets = total_instants / options.packets;
+	uint32 remaining_instants = total_instants;
 
-	dim3 numberOfBlocks = SENSORS / SENSORS_PER_BLOCK; //number of blocks active on the GPU
-	dim3 threadsPerBlock {GROUP_SIZE, SENSORS_PER_BLOCK};
+	if (options.debug) std::cout << "Input vector total size: " << input.size() << std::endl;
+	if (options.debug) std::cout << "Total instants: " << total_instants << std::endl;
+	if (options.debug) std::cout << "Total packets: " << total_packets << std::endl;
+
+
+	cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
+	cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
+
+	// Initialize stuff for autocorrelation calculation
+	SensorsDataPacket input_array(options);
+	BinGroupsMultiSensorMemory bin_structure(options);
+	ResultArray out = bin_structure.generateResultArray(options);
+
+
+	dim3 number_of_blocks = SENSORS / SENSORS_PER_BLOCK; 
+	dim3 threads_per_block {GROUP_SIZE, SENSORS_PER_BLOCK};
 	
 	//timer
 	Timer timer{[](std::vector<double> data){DataFile<double>::write(data, "out_timer.txt");},
@@ -113,24 +119,29 @@ int main(int argc, char* argv[]) {
 	
 
 
-	uint32 timesCalled; //counter
+	uint32 times_called; //counter
 	timer.start();
-	for(timesCalled = 0; timesCalled < options.iterations; ++timesCalled) {
-		inputArray.setNewDataPacket(input); //store in GPU memory a new block of data to be processed
-		autocorrelate <<< numberOfBlocks, threadsPerBlock >>> (inputArray, binStructure, timesCalled * INSTANTS_PER_PACKET, out);
+	for(times_called = 0; times_called < total_packets; times_called++) {
+		if (options.debug) std::cout << "Executing packet: " << times_called << std::endl;
+		uint32 start_position = times_called * options.packets * SENSORS;
+		input_array.setNewDataPacket(utils::slice(input,start_position, input.size()));
+		autocorrelate <<< number_of_blocks, threads_per_block >>> (input_array, bin_structure, times_called * options.packets, options.packets, out);
 		cudaDeviceSynchronize();	
 		timer.getInterval();
 	}
 	
 	out.download();	// Copy array of results from device memory to host memory
-	if (options.debug) std::cout << "Kernel called " << timesCalled << " times" << std::endl;
-	for (int lag = 0; lag < MAX_LAG; lag++){
-		std::cout << lag ;
-		for (int sensor = 0; sensor< SENSORS; sensor++){
-			auto value = out.get(sensor, lag);
-			std::cout << ',' << value;
+	if (options.debug) std::cout << "Kernel called " << times_called << " times" << std::endl;
+	
+	if (!options.debug) {
+		for (int lag = 0; lag < MAX_LAG; lag++){
+			std::cout << lag ;
+			for (int sensor = 0; sensor< SENSORS; sensor++){
+				auto value = out.get(sensor, lag);
+				std::cout << ',' << value;
+			}
+			std::cout << std::endl;
 		}
-		std::cout << std::endl;
 	}
 
 	//write output to file
@@ -149,11 +160,10 @@ int main(int argc, char* argv[]) {
 * @param instantsProcessed How many instants have been already processed in previous calls to this function.
 * @param out Output array, containing data computed in previous calls to this function.
 **/
-__global__ void autocorrelate(SensorsDataPacket packet, BinGroupsMultiSensorMemory binStructure, uint32 instantsProcessed, ResultArray out) {
+__global__ void autocorrelate(SensorsDataPacket packet, BinGroupsMultiSensorMemory binStructure, uint32 instantsProcessed, uint32 instants_per_packet, ResultArray out) {
 	
 	//precondition: blockDim.x = groupSize, blockDim.y = sensorsPerBlock
 
-	uint16 absoluteY = threadIdx.y + blockIdx.x * blockDim.y;
 	uint16 startingAbsoluteY = blockIdx.x * blockDim.y;
 	uint8 relativeID = threadIdx.x + threadIdx.y * blockDim.x; //not more than 256 threads per block (basically 8 sensors)
 
@@ -195,7 +205,7 @@ __global__ void autocorrelate(SensorsDataPacket packet, BinGroupsMultiSensorMemo
 
 
 	//cycle over all of the new data, where i is the instant in time processed
-	for (int i = 0; i < INSTANTS_PER_PACKET; ++i) {
+	for (int i = 0; i < instants_per_packet; ++i) {
 		
 		instantsProcessed++;
 		//only one thread per sensor adds the new datum to the bin structure

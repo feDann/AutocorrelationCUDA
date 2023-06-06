@@ -29,7 +29,7 @@ struct Options {
                                                 {"help", no_argument, 0, 'h'},
                                                 {0,0,0,0}};
 
-        while(( opt = getopt_long(argc, argv, "dpi:o:I:h", long_options, &option_index) ) != EOF ) {
+        while(( opt = getopt_long(argc, argv, "dp:i:o:I:h", long_options, &option_index) ) != EOF ) {
             switch (opt) {
                 case 'd':
                     debug = true;
