@@ -21,13 +21,13 @@ class Timer final {
 	**/
 	Timer(std::function<void(std::vector<double>)> finalAction, std::function<double()> getCurrentTime) : finalAction{finalAction}, getCurrentTime{getCurrentTime} {}
 	
-	/**
-	* @brief Performs the final action and destroys the Timer.
-	**/
-	~Timer() {
-		results.emplace_back(getCurrentTime() - startTime);
-		finalAction(results);
-	}
+	// /**
+	// * @brief Performs the final action and destroys the Timer.
+	// **/
+	// ~Timer() {
+	// 	results.emplace_back(getCurrentTime() - startTime);
+	// 	finalAction(results);
+	// }
 
 	Timer(Timer&) = delete;
 	Timer(Timer&&) = delete;
@@ -58,6 +58,14 @@ class Timer final {
 	**/
 	void startInterval() {
 		intervalTime = getCurrentTime();;
+	}
+
+	/**
+	* @brief Performs the final action and destroys the Timer.
+	**/
+	void stop() {
+		results.emplace_back(getCurrentTime() - startTime);
+		finalAction(results);
 	}
 
 

@@ -129,6 +129,7 @@ int main(int argc, char* argv[]) {
 		cudaDeviceSynchronize();	
 		timer.getInterval();
 	}
+	timer.stop();
 	
 	out.download();	// Copy array of results from device memory to host memory
 	if (options.debug) std::cout << "Kernel called " << times_called << " times" << std::endl;
