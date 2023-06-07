@@ -133,6 +133,7 @@ int main(int argc, char* argv[]) {
 	out.download();	// Copy array of results from device memory to host memory
 	if (options.debug) std::cout << "Kernel called " << times_called << " times" << std::endl;
 	
+	// Print oyt the result in csv format
 	if (!options.debug) {
 		for (int lag = 0; lag < MAX_LAG; lag++){
 			std::cout << lag ;
@@ -143,9 +144,6 @@ int main(int argc, char* argv[]) {
 			std::cout << std::endl;
 		}
 	}
-
-	//write output to file
-	//AutocorrelationCUDA::DataFile<std::uint_fast32_t>::write(out);
 	
 	cudaDeviceReset();
 	return 0;
