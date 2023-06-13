@@ -92,7 +92,6 @@ int main(int argc, char* argv[]) {
 
 	uint32 total_instants = input.size() / SENSORS;
 	uint32 total_packets = total_instants / options.packets;
-	uint32 remaining_instants = total_instants;
 
 	if (options.debug) std::cout << "Input vector total size: " << input.size() << std::endl;
 	if (options.debug) std::cout << "Total instants: " << total_instants << std::endl;
@@ -124,7 +123,7 @@ int main(int argc, char* argv[]) {
 	for(times_called = 0; times_called < total_packets; times_called++) {
 		if (options.debug) std::cout << "Executing packet: " << times_called << std::endl;
 		uint32 start_position = times_called * options.packets * SENSORS;
-		input_array.setNewDataPacket(utils::slice(input,start_position, input.size()));
+		input_array.setNewDataPacket(input.data() + start_position);
 		autocorrelate <<< number_of_blocks, threads_per_block >>> (input_array, bin_structure, times_called * options.packets, options.packets, out);
 		cudaDeviceSynchronize();	
 		timer.getInterval();

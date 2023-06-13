@@ -72,8 +72,8 @@ class SensorsDataPacket final {
 	* @brief Uploads a new data packet to the GPU.
 	* @param newData Reference to the new packet to be uploaded.
 	**/
-	__host__ void setNewDataPacket(const std::vector<uint8>& newData) {
-		cudaMemcpy(data, newData.data(), SENSORS * instants_per_packets * sizeof(uint8), cudaMemcpyHostToDevice);
+	__host__ void setNewDataPacket(const uint8* newData) {
+		cudaMemcpy(data, newData, SENSORS * instants_per_packets * sizeof(uint8), cudaMemcpyHostToDevice);
 	}
 
 
