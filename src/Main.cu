@@ -133,8 +133,8 @@ int main(int argc, char* argv[]) {
 	out.download();	// Copy array of results from device memory to host memory
 	if (options.debug) std::cout << "Kernel called " << times_called << " times" << std::endl;
 	
-	// Print oyt the result in csv format
-	if (!options.debug) {
+	// Print opt the result in csv format
+	if (options.results) {
 		for (int lag = 0; lag < MAX_LAG; lag++){
 			std::cout << lag ;
 			for (int sensor = 0; sensor< SENSORS; sensor++){
@@ -208,7 +208,7 @@ __global__ void autocorrelate(SensorsDataPacket packet, BinGroupsMultiSensorMemo
 		instantsProcessed++;
 		//only one thread per sensor adds the new datum to the bin structure
 		if (threadIdx.x < GROUPS_PER_SENSOR) {
-			BinGroupsMultiSensorMemory::insertNew(threadIdx.y, threadIdx.x, packet.get(startingAbsoluteY + relativeID, i), data);
+			BinGroupsMultiSensorMemory::insertNew(threadIdx.y, threadIdx.x, packet.get(startingAbsoluteY + (relativeID +1)/GROUP_SIZE, i), data);
 		}
 		__syncthreads();
 			

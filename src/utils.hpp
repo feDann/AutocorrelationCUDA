@@ -1,3 +1,6 @@
+#ifndef AUTOCORRELATION_UTILS
+#define AUTOCORRELATION_UTILS
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -81,3 +84,4 @@ namespace utils {
         return vec;
     }
 }
+#endif
