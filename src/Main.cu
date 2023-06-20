@@ -117,21 +117,22 @@ int main(int argc, char* argv[]) {
 									      return ((double)tp.tv_sec + (double)tp.tv_usec * 0.000001);}};
 	
 
-
-	uint32 times_called; //counter
 	timer.start();
+	for(int i = 0; i < options.iterations; i++){
+	uint32 times_called; //counter
 	for(times_called = 0; times_called < total_packets; times_called++) {
 		if (options.debug) std::cout << "Executing packet: " << times_called << std::endl;
 		uint32 start_position = times_called * options.packets * SENSORS;
 		input_array.setNewDataPacket(input.data() + start_position);
 		autocorrelate <<< number_of_blocks, threads_per_block >>> (input_array, bin_structure, times_called * options.packets, options.packets, out);
 		cudaDeviceSynchronize();	
+		}
 		timer.getInterval();
+		if (options.debug) std::cout << "Kernel called " << times_called << " times" << std::endl;
 	}
 	timer.stop();
 	
 	out.download();	// Copy array of results from device memory to host memory
-	if (options.debug) std::cout << "Kernel called " << times_called << " times" << std::endl;
 	
 	// Print opt the result in csv format
 	if (options.results) {
