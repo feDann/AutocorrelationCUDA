@@ -1,0 +1,303 @@
+==219680== NVPROF is profiling process 219680, command: ./main -p 10 -i ../input/10.csv -o ./profiler/t
+==219680== Some kernel(s) will be replayed on device 0 in order to collect all events/metrics.
+==219680== Profiling application: ./main -p 10 -i ../input/10.csv -o ./profiler/t
+==219680== Profiling result:
+==219680== Metric result:
+Invocations                               Metric Name                                                    Metric Description         Min         Max         Avg
+Device "NVIDIA TITAN X (Pascal) (0)"
+    Kernel: autocorrelate(AutocorrelationCUDA::SensorsDataPacket, AutocorrelationCUDA::BinGroupsMultiSensorMemory, unsigned int, unsigned int, AutocorrelationCUDA::ResultArray)
+          1                             stall_texture                                         Issue Stall Reasons (Texture)       3.80%       3.80%       3.80%
+          1                               stall_other                                           Issue Stall Reasons (Other)      15.26%      15.26%      15.26%
+          1                     stall_exec_dependency                            Issue Stall Reasons (Execution Dependency)      21.33%      21.33%      21.33%
+          1                          stall_inst_fetch                              Issue Stall Reasons (Instructions Fetch)       6.85%       6.85%       6.85%
+          1                                stall_sync                                 Issue Stall Reasons (Synchronization)      33.83%      33.83%      33.83%
+          1                     stall_memory_throttle                                 Issue Stall Reasons (Memory Throttle)       1.66%       1.66%       1.66%
+          1                        stall_not_selected                                    Issue Stall Reasons (Not Selected)       2.12%       2.12%       2.12%
+          1                      tex_cache_throughput                                              Unified Cache Throughput  107.27GB/s  107.27GB/s  107.27GB/s
+          1                     dram_write_throughput                                        Device Memory Write Throughput  42.887GB/s  42.887GB/s  42.887GB/s
+          1                      dram_read_throughput                                         Device Memory Read Throughput  11.738GB/s  11.738GB/s  11.738GB/s
+          1                    issue_slot_utilization                                                Issue Slot Utilization      32.77%      32.77%      32.77%
+          1                  sysmem_read_transactions                                       System Memory Read Transactions           0           0           0
+          1                 sysmem_write_transactions                                      System Memory Write Transactions           5           5           5
+          1                      l2_read_transactions                                                  L2 Read Transactions       64096       64096       64096
+          1                     local_memory_overhead                                                 Local Memory Overhead       0.00%       0.00%       0.00%
+          1                            gst_throughput                                               Global Store Throughput  80.618GB/s  80.618GB/s  80.618GB/s
+          1                            gld_throughput                                                Global Load Throughput  93.780GB/s  93.780GB/s  93.780GB/s
+          1                            gld_efficiency                                         Global Memory Load Efficiency      86.40%      86.40%      86.40%
+          1                            gst_efficiency                                        Global Memory Store Efficiency     100.00%     100.00%     100.00%
+          1                         shared_efficiency                                              Shared Memory Efficiency      35.99%      35.99%      35.99%
+          1                 warp_execution_efficiency                                             Warp Execution Efficiency      86.37%      86.37%      86.37%
+          1         warp_nonpred_execution_efficiency                              Warp Non-Predicated Execution Efficiency      82.63%      82.63%      82.63%
+          1                          dram_utilization                                             Device Memory Utilization     Low (2)     Low (2)     Low (2)
+          1                           tex_utilization                                             Unified Cache Utilization     Low (1)     Low (1)     Low (1)
+          1                            l2_utilization                                                  L2 Cache Utilization     Low (1)     Low (1)     Low (1)
+          1                        shared_utilization                                             Shared Memory Utilization     Low (3)     Low (3)     Low (3)
+          1                        sysmem_utilization                                             System Memory Utilization     Low (1)     Low (1)     Low (1)
+          1                               ldst_issued                                        Issued Load/Store Instructions      432896      432896      432896
+          1                                 cf_issued                                      Issued Control-Flow Instructions      123648      123648      123648
+          1                   sysmem_write_throughput                                        System Memory Write Throughput  6.5810MB/s  6.5810MB/s  6.5810MB/s
+          1                    sysmem_read_throughput                                         System Memory Read Throughput  0.00000B/s  0.00000B/s  0.00000B/s
+          1                       l2_write_throughput                                                L2 Throughput (Writes)  80.634GB/s  80.634GB/s  80.634GB/s
+          1                        l2_read_throughput                                                 L2 Throughput (Reads)  82.386GB/s  82.386GB/s  82.386GB/s
+          1                   dram_write_transactions                                      Device Memory Write Transactions       33366       33366       33366
+          1                    dram_read_transactions                                       Device Memory Read Transactions        9132        9132        9132
+          1                    tex_cache_transactions                                            Unified Cache Transactions       83456       83456       83456
+          1                        achieved_occupancy                                                    Achieved Occupancy    0.537606    0.537606    0.537606
+          1                     l2_write_transactions                                                 L2 Write Transactions       62733       62733       62733
+          1                 shared_store_transactions                                             Shared Store Transactions       88064       88064       88064
+          1                  shared_load_transactions                                              Shared Load Transactions      145664      145664      145664
+          1                  local_store_transactions                                              Local Store Transactions           0           0           0
+          1                   local_load_transactions                                               Local Load Transactions           0           0           0
+          1                          gst_transactions                                             Global Store Transactions       62720       62720       62720
+          1                          gld_transactions                                              Global Load Transactions      272386      272386      272386
+          1                               issue_slots                                                           Issue Slots     1139968     1139968     1139968
+          1                   shared_store_throughput                                        Shared Memory Store Throughput  452.78GB/s  452.78GB/s  452.78GB/s
+          1                    shared_load_throughput                                         Shared Memory Load Throughput  748.92GB/s  748.92GB/s  748.92GB/s
+          1                    local_store_throughput                                         Local Memory Store Throughput  0.00000B/s  0.00000B/s  0.00000B/s
+          1                     local_load_throughput                                          Local Memory Load Throughput  0.00000B/s  0.00000B/s  0.00000B/s
+          1                        tex_fu_utilization                                     Texture Function Unit Utilization     Low (1)     Low (1)     Low (1)
+          1                         cf_fu_utilization                                Control-Flow Function Unit Utilization     Low (1)     Low (1)     Low (1)
+          1                       ldst_fu_utilization                                  Load/Store Function Unit Utilization     Low (2)     Low (2)     Low (2)
+          1                    special_fu_utilization                                     Special Function Unit Utilization    Idle (0)    Idle (0)    Idle (0)
+          1             half_precision_fu_utilization                              Half-Precision Function Unit Utilization    Idle (0)    Idle (0)    Idle (0)
+          1           single_precision_fu_utilization                            Single-Precision Function Unit Utilization     Low (3)     Low (3)     Low (3)
+          1           double_precision_fu_utilization                            Double-Precision Function Unit Utilization    Idle (0)    Idle (0)    Idle (0)
+          1                         flop_count_hp_add                         Floating Point Operations(Half Precision Add)           0           0           0
+          1                         flop_count_hp_mul                          Floating Point Operation(Half Precision Mul)           0           0           0
+          1                         flop_count_hp_fma                         Floating Point Operations(Half Precision FMA)           0           0           0
+          1                                inst_fp_16                                                 HP Instructions(Half)           0           0           0
+          1                                inst_fp_32                                               FP Instructions(Single)           0           0           0
+          1                                inst_fp_64                                               FP Instructions(Double)           0           0           0
+          1                              inst_integer                                                  Integer Instructions    18403328    18403328    18403328
+          1                          inst_bit_convert                                              Bit-Convert Instructions           0           0           0
+          1                              inst_control                                             Control-Flow Instructions     2818048     2818048     2818048
+          1                        inst_compute_ld_st                                               Load/Store Instructions     6989824     6989824     6989824
+          1           inst_inter_thread_communication                                             Inter-Thread Instructions           0           0           0
+          1                                 inst_misc                                                     Misc Instructions     4915200     4915200     4915200
+          1                             inst_executed                                                 Instructions Executed     1252864     1252864     1252864
+          1                               inst_issued                                                   Instructions Issued     1256960     1256960     1256960
+          1                            ecc_throughput                                                        ECC Throughput  0.00000B/s  0.00000B/s  0.00000B/s
+          1                          ecc_transactions                                                      ECC Transactions           0           0           0
+          1                  l2_tex_read_transactions                                       L2 Transactions (Texture Reads)       64000       64000       64000
+          1                 l2_tex_write_transactions                                      L2 Transactions (Texture Writes)       62720       62720       62720
+          1                    l2_atomic_transactions                                     L2 Transactions (Atomic requests)           0           0           0
+          1                       atomic_transactions                                                   Atomic Transactions           0           0           0
+          1                   l2_tex_write_throughput                                        L2 Throughput (Texture Writes)  80.618GB/s  80.618GB/s  80.618GB/s
+          1                      l2_atomic_throughput                                       L2 Throughput (Atomic requests)  0.00000B/s  0.00000B/s  0.00000B/s
+          1                     texture_load_requests             Total number of texture Load requests from Multiprocessor           0           0           0
+          1                 global_reduction_requests         Total number of global reduction requests from Multiprocessor           0           0           0
+          1                   surface_atomic_requests           Total number of surface atomic requests from Multiprocessor           0           0           0
+          1                surface_reduction_requests        Total number of surface reduction requests from Multiprocessor           0           0           0
+          1                         sysmem_read_bytes                                              System Memory Read Bytes           0           0           0
+          1                        sysmem_write_bytes                                             System Memory Write Bytes         160         160         160
+          1                           l2_tex_hit_rate                                                     L2 Cache Hit Rate      93.07%      93.07%      93.07%
+          1                 l2_global_reduction_bytes          Bytes written to L2 from Unified cache for global reductions           0           0           0
+          1              l2_global_atomic_store_bytes             Bytes written to L2 from Unified cache for global atomics           0           0           0
+          1                    l2_surface_store_bytes            Bytes written to L2 from Unified Cache for surface stores.           0           0           0
+          1                l2_surface_reduction_bytes         Bytes written to L2 from Unified Cache for surface reductions           0           0           0
+          1             l2_surface_atomic_store_bytes    Bytes transferred between Unified Cache and L2 for surface atomics           0           0           0
+          1                      global_load_requests              Total number of global load requests from Multiprocessor       83456       83456       83456
+          1                    global_atomic_requests            Total number of global atomic requests from Multiprocessor           0           0           0
+          1                     global_store_requests             Total number of global store requests from Multiprocessor       62976       62976       62976
+          1                       local_load_requests               Total number of local load requests from Multiprocessor           0           0           0
+          1                      local_store_requests              Total number of local store requests from Multiprocessor           0           0           0
+          1                     surface_load_requests             Total number of surface load requests from Multiprocessor           0           0           0
+          1                    surface_store_requests            Total number of surface store requests from Multiprocessor           0           0           0
+          1              inst_executed_surface_stores                            Warp level instructions for surface stores           0           0           0
+          1              inst_executed_global_atomics                  Warp level instructions for global atom and atom cas           0           0           0
+          1           inst_executed_global_reductions                         Warp level instructions for global reductions           0           0           0
+          1             inst_executed_surface_atomics                 Warp level instructions for surface atom and atom cas           0           0           0
+          1          inst_executed_surface_reductions                        Warp level instructions for surface reductions           0           0           0
+          1              inst_executed_shared_atomics                  Warp level shared instructions for atom and atom CAS           0           0           0
+          1                     inst_executed_tex_ops                                   Warp level instructions for texture           0           0           0
+          1                      l2_global_load_bytes       Bytes read from L2 for misses in Unified Cache for global loads     2048000     2048000     2048000
+          1                       l2_local_load_bytes        Bytes read from L2 for misses in Unified Cache for local loads           0           0           0
+          1               l2_local_global_store_bytes   Bytes written to L2 from Unified Cache for local and global stores.     2007040     2007040     2007040
+          1                     l2_surface_load_bytes      Bytes read from L2 for misses in Unified Cache for surface loads           0           0           0
+          1                        tex_cache_hit_rate                                                Unified Cache Hit Rate      53.30%      53.30%      53.30%
+          1                          dram_write_bytes                             Total bytes written from L2 cache to DRAM     1067712     1067712     1067712
+          1                inst_executed_global_loads                              Warp level instructions for global loads       27648       27648       27648
+          1                 inst_executed_local_loads                               Warp level instructions for local loads           0           0           0
+          1                inst_executed_shared_loads                              Warp level instructions for shared loads      121600      121600      121600
+          1                           dram_read_bytes                                Total bytes read from DRAM to L2 cache      292224      292224      292224
+          1               inst_executed_surface_loads                             Warp level instructions for surface loads           0           0           0
+          1               inst_executed_global_stores                             Warp level instructions for global stores       15872       15872       15872
+          1                inst_executed_local_stores                              Warp level instructions for local stores           0           0           0
+          1               inst_executed_shared_stores                             Warp level instructions for shared stores       65536       65536       65536
+          1                    l2_tex_read_throughput                                         L2 Throughput (Texture Reads)  82.263GB/s  82.263GB/s  82.263GB/s
+          1                         flop_count_dp_add                       Floating Point Operations(Double Precision Add)           0           0           0
+          1                         flop_count_dp_fma                       Floating Point Operations(Double Precision FMA)           0           0           0
+          1                         flop_count_dp_mul                       Floating Point Operations(Double Precision Mul)           0           0           0
+          1                         flop_count_sp_add                       Floating Point Operations(Single Precision Add)           0           0           0
+          1                         flop_count_sp_fma                       Floating Point Operations(Single Precision FMA)           0           0           0
+          1                         flop_count_sp_mul                        Floating Point Operation(Single Precision Mul)           0           0           0
+          1                     flop_count_sp_special                   Floating Point Operations(Single Precision Special)           0           0           0
+          1                   stall_memory_dependency                                    Issue Stall Reasons (Data Request)      12.79%      12.79%      12.79%
+          1          stall_constant_memory_dependency                              Issue Stall Reasons (Immediate constant)       1.53%       1.53%       1.53%
+          1                           stall_pipe_busy                                       Issue Stall Reasons (Pipe Busy)       0.84%       0.84%       0.84%
+          1              sm_efficiency (28 instances)                                               Multiprocessor Activity           -           -  [     88.37%     89.28%     80.80%     82.31%     89.54%     80.69%     88.80%     82.22%     88.68%     82.39%     89.27%     80.83%     88.80%     88.92%     82.37%     89.31%     80.83%     88.12%     88.62%     80.94%     88.59%     80.69%     88.21%     88.62%     80.70%     88.25%     80.64%     87.74% ]
+==219680== PC SAMPLING SUMMARY:
+autocorrelate(AutocorrelationCUDA::SensorsDataPacket, AutocorrelationCUDA::BinGroupsMultiSensorMemory, unsigned int, unsigned int, AutocorrelationCUDA::ResultArray)
+           PC        INVALID           NONE     INST_FETCH       EXEC_DEP        MEM_DEP        TEXTURE           SYNC  CONST_MEM_DEP      PIPE_BUSY   MEM_THROTTLE        NOT_SEL          OTHER     TOTAL
+          0x8              0              0             42              0              0              0              0             26              0              0              0              4        72
+         0x10              0              0              0              0              0              0              0             32              0              0              0              0        32
+         0x38              0              0              1              9              0              0              0              0              0              0              0              7        17
+         0x48              0              0              1              1              0              0              0              0              0              0              0              0         2
+         0x58              0              0              0              1              0              0              0              0              0              0              1              0         2
+         0x68              0              0              0              2              0              0              0              0              0              0              3              0         5
+         0x78              0              0              0              5              0              0              0              0              0              0              1              0         6
+         0xa8              0              0              0              0              0              0              0              0              1              0              0              0         1
+         0xb8              0              0              0              1              0              0              0              0              0              0              2              0         3
+         0xd0              0              0              0              1              0              0              0              0              0              0              0              0         1
+         0xd8              0              1              0              0              0              0              0              0              0              0              0              0         1
+         0xf8              0              0              0              1              0              0              0              0              0              0              0              0         1
+        0x118              0              1              0              0              0              0              0              0              0              0              0              0         1
+        0x128              0              1              0              1              0              0              0              0              0              0              0              0         2
+        0x130              0              0              0              0              0              2              0              0              0              0              0              0         2
+        0x148              0              0              0              0              0              4              0              0              1              0              0              0         5
+        0x158              0              0              0              1              0              7              0              0              0              0              0              0         8
+        0x170              0              0              0              0              0              7              0              0              0              0              0              0         7
+        0x188              0              0              0              1              0             13              0              0              0              0              0              0        14
+        0x198              0              0              0              0              0              6              0              0              0              0              0              0         6
+        0x1a8              0              0              0              0              0              6              0              0              0              0              0              0         6
+        0x1b0              0              0              0              0              0              4              0              0              0              0              0              0         4
+        0x1b8              0              0              0              0              0              6              0              0              0              0              0              0         6
+        0x1c8              0              0              0              0              0             12              0              0              0              0              0              0        12
+        0x1d0              0              0              0              0              0             13              0              0              0              0              0              0        13
+        0x1d8              0              0              0              0              0              4              0              0              0              0              0              0         4
+        0x1e8              0              0              0              0              0             12              0              0              1              0              0              0        13
+        0x1f0              0              0              0              0              0             11              0              0              1              0              0              0        12
+        0x1f8              0              0              0              0              0             10              0              0              0              0              0              0        10
+        0x208              0              0              0              0              0              0              0              0              0              0              0              6         6
+        0x210              0              0              7              1             10              0              0              0              0              0              0             88       106
+        0x230              0              0              0              1              5              0              0              0              0              0              0              3         9
+        0x258              0              0              0              0              5              0              0              0              0              0              0              1         6
+        0x288              0              0              1              0             39              0              0              0              0              0              0              6        46
+        0x2b0              0              0              0              0             76              0              0              0              0              0              0              8        84
+        0x2d0              0              0              0              0             44              0              0              0              0              0              0              0        44
+        0x2f8              0              1              1              0              0              0            111              0              0              0              0              1       114
+        0x308              0              0              1              0              0              0              3              0              0              0              0              0         4
+        0x310              0              0              0              0              0              0              0              0              0              0              0              5         5
+        0x318              0              0              0              2              0              0              0              0              0              0              0              0         2
+        0x330              0              0              0              0              0              0              0              0              0              0              1              0         1
+        0x350              0              1              0              0              0              0              0              0              0              0              0              0         1
+        0x3a8              0              1              0              0              0              0              0              0              0              0              0              0         1
+        0x3d8              0              0              4              2              0              0              0              0              0              0              0              1         7
+        0x3f0              0              1              0              0              0              0              0              0              0              0              0              0         1
+        0x3f8              0              0              0              3              0              0              0              0              0              0              2              0         5
+        0x408              0              0              1              9              0              0              0              0              0              0              0              0        10
+        0x410              0              3              0              1              0              0              0              0              0              0              0              0         4
+        0x428              0              1              0             11              0              0              0              0              0              0              0              0        12
+        0x430              0              1              0              2              0              0              0              0              0              0              0              0         3
+        0x438              0              0              0              3              0              0              0              0              0              0              0              0         3
+        0x448              0              1              0              3              0              0              0              0              0              0              1              0         5
+        0x450              0              1              0              6              0              0              0              0              0              0              0              1         8
+        0x468              0              1              0              0              0              0              0              0              0              0              1              0         2
+        0x470              0              0              0             10              0              0              0              0              0              0              1              0        11
+        0x478              0              1              0             28              0              0              0              0              0              0              0              0        29
+        0x488              0              3              0              8              0              0              0              0              0              0              1              0        12
+        0x490              0              2              6              1            313              0              0              0              0              0              2              9       333
+        0x498              0              1              0              0              0              0              0              0              0              0              2              0         3
+        0x4a8              0              0              6             51              0              0              0              0              0              0              0              9        66
+        0x4b0              0              3              0              2              0              0              0              0              0              0              0              0         5
+        0x4b8              0              2              0              0              0              0              0              0              0              0              0              0         2
+        0x4c8              0              1              8              7              0              0              0              0              1              0              0              3        20
+        0x4d0              0              0              6              0              0              0             83              0              0              0              0             15       104
+        0x4d8              0              0              4              0              0              0             65              0              0              0              0             19        88
+        0x4e8              0              1              1              0              0              0              0              0              0              0              0              3         5
+        0x4f0              0              2              0              6              0              0              0              0              0              0              0              1         9
+        0x508              0              0              2              1              0              0              0              0              0              0              1              6        10
+        0x510              0              0              0              7              0              0              0              0              0              0              1              0         8
+        0x528              0              0              0              1              0              0              0              0              0              0              0              1         2
+        0x530              0              0              0              4              0              0              0              0              0              0              0              0         4
+        0x8a8              0              0             33              0              0              0              0              0              0              0              0             14        47
+        0x8b0              0              2              0              0              0              0              0              0              0              0              0              0         2
+        0x8b8              0              3              0              2              0              0              0              0              0              0              1              1         7
+        0x8c8              0              2              7              0              0              0              0              0              0              0              1              0        10
+        0x8d0              0              0              0              0              0              0              0              0              0              0              1              0         1
+        0x8d8              0              0              0              6              0              0              0              0              0              0              1              0         7
+        0x8e8              0              3             18             10              0              0              0              0              0              0              0              6        37
+        0x8f8              0              3              0             10              0              0              0              0              0              0              0              0        13
+        0x908              0              0             21             11              0              0              0              0              0              0              0              0        32
+        0x910              0              3              0             15              0              0              0              0              0              0              1              0        19
+        0x918              0              4              0              6              0              0              0              0              0              0              2              0        12
+        0x928              0              2              0              0              0              0              0              0              5              0              3              0        10
+        0x930              0              2              0              0              0              0              0              0              3              0              3              0         8
+        0x938              0              0              0              7              0              0              0              0              0              0              5              0        12
+        0x948              0              1              6             24              0              0              0              0              0              0              1             19        51
+        0x950              0              2              0              0              0              0              0              0              0              0              2              0         4
+        0x958              0              4              0              7              0              0              0              0              0              0              0              0        11
+        0x968              0              1              0              0              0              0              0              0              0              0              3              0         4
+        0x970              0              2              0              6              0              0              0              0              0              0              0              1         9
+        0x988              0              3              2              0              0              0              0              0              5              0              3              0        13
+        0x990              0              0              0              7              0              0              0              0              2              0              0              0         9
+        0x9a8              0              0              0              5              0              0              0              0              1              0              1              0         7
+        0x9b0              0              0              0             27              0              0              0              0              0              0              1              1        29
+        0x9b8              0              0              2             50              0              0              0              0              0              0              0             10        62
+        0x9c8              0              2              3             13              0              0              0              0              0              0              2              0        20
+        0x9d0              0              3              0              0              0              0              0              0              0              0              2              1         6
+        0x9d8              0              3              6              0              0              0            112              0              0              0              0             28       149
+        0x9e8              0              4              4              0              0              0             90              0              0              0              0             23       121
+        0x9f0              0              0              3              1              0              0              0              0              0              0              0             22        26
+        0x9f8              0              0              0              1              0              0              0              0              0              0              0              0         1
+        0xa08              0              0              1              3              0              0              0              0              0              0              0              0         4
+        0xa10              0              0              0              1              0              0              0              0              0              0              0              0         1
+        0xa18              0              0              0              0              0              0              0              0              0              0              1              0         1
+        0xa48              0              0              0              3              0              0              0              0              0              0              0              0         3
+        0xa50              0              1              0              1              0              0              0              0              0              0              0              0         2
+        0xa78              0              2              0              0              0              0              0              0              0              0              0              8        10
+        0xa88              0              0              1              5              0              0              0              0              0              0              0              0         6
+        0xa90              0              0              0              1              0              0              0              0              0              0              0              0         1
+        0xa98              0              1              0              1              0              0              0              0              0              0              0              0         2
+        0xab8              0              1              0              0              0              0              0              0              0              0              0              0         1
+        0xac8              0              1              0              0              0              0              0              0              0              0              0              0         1
+        0xad0              0              0              0              2              0              0              0              0              0              0              0              0         2
+        0xae8              0              0              0              1              0              0              0              0              0              0              0              1         2
+        0xaf8              0              0              1              1              0              0              0              0              0              0              0              0         2
+        0xb18              0              0              1              8              0              0              0              0              0              0              0              3        12
+        0xb28              0              0              0              1              0              0              0              0              0              0              0              0         1
+        0xb30              0              1              0              0              0              0              0              0              0              0              0              0         1
+        0xb38              0              0              0              6              0              0              0              0              0              0              0              0         6
+        0xb48              0              1              0              3              0              0              0              0              0              0              0              0         4
+        0xb58              0              0              0              1              0              0              0              0              0              0              0              0         1
+        0xb78              0              4             45              0              0              0              0              0              0              0              0             17        66
+        0xb88              0              0              0             31              0              0              0              0              0              0              0              0        31
+        0xb90              0              0              0             20              0              0              0              0              0              0              0              0        20
+        0xb98              0              3              0             15              0              0              0              0              0              0              0              0        18
+        0xbb0              0              0              7              0              0              0            360              0              0              0              0             33       400
+        0xbb8              0              1              4              4              0              0             65              0              0              0              0             15        89
+        0xbc8              0              3             19              0              0              0              0              0              0              0              2              0        24
+        0xbd0              0              2              0              9              0              0              0              0              0              0              1              0        12
+        0xbd8              0              4              0              0              0              0              0              0              0              0              1              0         5
+        0xbe8              0              4              0             19              0              0              0              0              0              0              2              0        25
+        0xbf0              0              1              2              5              0              0              0              0              0              0              0             14        22
+        0xbf8              0              0              0              4              0              0              0              0              1              0              0              0         5
+        0xc08              0              2              0             10              0              0              0              0              0              0              0              0        12
+        0xc10              0              0              0              3              0              0              0              0              0              0              0              0         3
+        0xc38              0              1              0              0              0              0              0              0              0              0              0              0         1
+        0xc50              0              0              0              0              0              0              0              0              0              0              1              0         1
+        0xc68              0              0              0              1              0              0              0              0              0              0              0              0         1
+        0xc78              0              0              0              1              0              0              0              0              0              0              0              0         1
+        0xc90              0              0              0              1              0              0              0              0              0              0              0              0         1
+        0xca8              0              0              0              1              0              0              0              0              0              0              0              0         1
+        0xcb8              0              0              0              3              0              0              0              0              0              0              0              0         3
+        0xcc8              0              0              0              0              0              0              0              0              1              0              0              0         1
+        0xcd0              0              0              0              0              0              0              0              0              0              0              1              0         1
+        0xcf8              0              0              0              5              0              0              0              0              0              0              0              0         5
+        0xd10              0              0              0             11              0              0              0              0              0              0              0              0        11
+        0xd50              0              0              0              4              0              0              0              0              0              0              0              0         4
+        0xd68              0              0              0              1              0              0              0              0              0              0              0              0         1
+        0xd70              0              0              0              1              0              0              0              0              0              0              0              0         1
+        0xd88              0              0              1              8              0              0              0              0              0              0              0              1        10
+        0xdb0              0              0              0              0              0              1              0              0              0              0              0              0         1
+        0xdb8              0              0              0              4              0              0              0              0              0              0              0              0         4
+        0xdc8              0              1              0              0              0              1              0              0              0              0              0              0         2
+        0xdd0              0              0              0              0              0              1              0              0              0              0              0              0         1
+        0xdd8              0              0              0              0              0              6              0              0              0              0              0              0         6
+        0xde8              0              0              0              0              0              6              0              0              0              0              0              0         6
+        0xdf0              0              0              0              0              0              6              0              0              0              0              0              0         6
+        0xdf8              0              0              0              0              0              0              0              0              0             88              0              4        92
+        Total              0            114            279            601            492            138            889             58             23             88             62            419      3163
+Total Samples: 3475
+Dropped Samples: 312
+==219680== Generated result file: /home/fedann/thesis/autocorrelation_cuda/profiler/10.nvvp
