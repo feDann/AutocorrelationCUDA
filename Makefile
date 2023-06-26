@@ -5,7 +5,7 @@ CXXFLAGS=-Ofast -std=c++11 -D_MWAITXINTRIN_H_INCLUDED -D_FORCE_INLINES
 LIBS=-lcudart
 FLAGS=-Xcompiler -fopenmp -D_MWAITXINTRIN_H_INCLUDED -D_FORCE_INLINES
 
-CUDAFLAGS=--ptxas-options=-v -O4 -m64 -arch compute_61 -code sm_61 -Xptxas -dlcm=ca -Xcompiler -D_FORCE_INLINES 
+CUDAFLAGS=--ptxas-options=-v -O4 -m64 -arch compute_61 -code sm_61 -Xptxas -dlcm=ca -Xcompiler -D_FORCE_INLINES -lineinfo
 
 all: main
 
