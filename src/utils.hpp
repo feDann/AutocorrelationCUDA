@@ -95,13 +95,13 @@ namespace utils {
         size_t maxLag = std::pow(2, numBins) * binSize;
         
         for (size_t i = 0; i < numBins; ++i) {
-            for(size_t j = 0; j < binSize; ++j){
-                tau += std::pow(2, std::floor((i * binSize)/ binSize));
+            for(size_t j = 1; j < binSize; ++j){
+                taus.push_back(tau);
 
+                tau += std::pow(2, std::floor((i * binSize)/ binSize));
                 if (tau > maxLag || tau >= fullTimeLength){
                     return taus;
                 }
-                taus.push_back(tau);
             }
         }
 

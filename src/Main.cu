@@ -142,7 +142,7 @@ int main(int argc, char* argv[]) {
 		for (int lag = 0; lag < taus.size(); lag++){
 			std::cout << taus[lag] ;
 			for (int sensor = 0; sensor< SENSORS; sensor++){
-				auto value = out.get(sensor, lag + 1);
+				auto value = out.get(sensor, lag);
 				std::cout << ',' << value;
 			}
 			std::cout << std::endl;
