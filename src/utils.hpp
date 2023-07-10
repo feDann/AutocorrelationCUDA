@@ -7,6 +7,9 @@
 #include <sstream>
 #include <fstream>
 #include <stdexcept>
+#include <cmath>
+
+#include "Definitions.h"
 
 
 namespace utils {
@@ -82,6 +85,27 @@ namespace utils {
     
         std::vector<T> vec(first, last);
         return vec;
+    }
+
+
+    std::vector<uint16_t> generateTaus(size_t fullTimeLength, size_t binSize, size_t numBins) {
+        std::vector<uint16_t> taus;
+        uint16_t tau = 0;
+
+        size_t maxLag = std::pow(2, numBins) * binSize;
+        
+        for (size_t i = 0; i < numBins; ++i) {
+            for(size_t j = 0; j < binSize; ++j){
+                tau += std::pow(2, std::floor((i * binSize)/ binSize));
+
+                if (tau > maxLag || tau >= fullTimeLength){
+                    return taus;
+                }
+                taus.push_back(tau);
+            }
+        }
+
+        return taus;
     }
 }
 #endif
