@@ -50,7 +50,7 @@ int gettimeofday(struct timeval* tp, struct timezone* tzp)
 using namespace AutocorrelationCUDA;
 
 
-__global__ void autocorrelate(SensorsDataPacket packet, BinGroupsMultiSensorMemory binStructure, uint32 instantsProcessed, uint32 instants_per_packet, ResultArray out);
+__global__ void autocorrelate(SensorsDataPacket packet, BinGroupsMultiSensorMemory binStructure, uint32 instantsProcessed, uint32 instantsPerPacket, ResultArray out);
 
 
 namespace AutocorrelationCUDA {
@@ -90,25 +90,25 @@ int main(int argc, char* argv[]) {
 		input = utils::generateRandomData(options.packets, SENSORS);
 	}
 
-	uint32 total_instants = input.size() / SENSORS;
-	uint32 total_packets = total_instants / options.packets;
+	uint32 totalInstants = input.size() / SENSORS;
+	uint32 totalPackets = totalInstants / options.packets;
 
 	if (options.debug) std::cout << "Input vector total size: " << input.size() << std::endl;
-	if (options.debug) std::cout << "Total instants: " << total_instants << std::endl;
-	if (options.debug) std::cout << "Total packets: " << total_packets << std::endl;
+	if (options.debug) std::cout << "Total instants: " << totalInstants << std::endl;
+	if (options.debug) std::cout << "Total packets: " << totalPackets << std::endl;
 
 
 	cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 	cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
 
 	// Initialize stuff for autocorrelation calculation
-	SensorsDataPacket input_array(options);
-	BinGroupsMultiSensorMemory bin_structure(options);
-	ResultArray out = bin_structure.generateResultArray(options);
+	SensorsDataPacket inputArray(options);
+	BinGroupsMultiSensorMemory binStructure(options);
+	ResultArray out = binStructure.generateResultArray(options);
 
 
-	dim3 number_of_blocks = SENSORS / SENSORS_PER_BLOCK; 
-	dim3 threads_per_block {GROUP_SIZE, SENSORS_PER_BLOCK};
+	dim3 numberOfBlocks = SENSORS / SENSORS_PER_BLOCK; 
+	dim3 threadsPerBlock {GROUP_SIZE, SENSORS_PER_BLOCK};
 	
 	//timer
 	Timer timer{[options](std::vector<double> data){DataFile<double>::write(data, options.output_file);},
@@ -119,16 +119,16 @@ int main(int argc, char* argv[]) {
 
 	timer.start();
 	for(int i = 0; i < options.iterations; i++){
-	uint32 times_called; //counter
-	for(times_called = 0; times_called < total_packets; times_called++) {
-		if (options.debug) std::cout << "Executing packet: " << times_called << std::endl;
-		uint32 start_position = times_called * options.packets * SENSORS;
-		input_array.setNewDataPacket(input.data() + start_position);
-		autocorrelate <<< number_of_blocks, threads_per_block >>> (input_array, bin_structure, times_called * options.packets, options.packets, out);
+	uint32 timesCalled; //counter
+	for(timesCalled = 0; timesCalled < totalPackets; timesCalled++) {
+		if (options.debug) std::cout << "Executing packet: " << timesCalled << std::endl;
+		uint32 startPosition = timesCalled * options.packets * SENSORS;
+		inputArray.setNewDataPacket(input.data() + startPosition);
+		autocorrelate <<< numberOfBlocks, threadsPerBlock >>> (inputArray, binStructure, timesCalled * options.packets, options.packets, out);
 		cudaDeviceSynchronize();	
 		}
 		timer.getInterval();
-		if (options.debug) std::cout << "Kernel called " << times_called << " times" << std::endl;
+		if (options.debug) std::cout << "Kernel called " << timesCalled << " times" << std::endl;
 	}
 	timer.stop();
 	
@@ -136,10 +136,13 @@ int main(int argc, char* argv[]) {
 	
 	// Print opt the result in csv format
 	if (options.results) {
-		for (int lag = 0; lag < MAX_LAG; lag++){
-			std::cout << lag ;
+
+		auto taus = utils::generateTaus(totalInstants, GROUP_SIZE, GROUPS_PER_SENSOR);
+
+		for (int lag = 0; lag < taus.size(); lag++){
+			std::cout << taus[lag] ;
 			for (int sensor = 0; sensor< SENSORS; sensor++){
-				auto value = out.get(sensor, lag);
+				auto value = out.get(sensor, lag + 1);
 				std::cout << ',' << value;
 			}
 			std::cout << std::endl;
@@ -159,7 +162,7 @@ int main(int argc, char* argv[]) {
 * @param instantsProcessed How many instants have been already processed in previous calls to this function.
 * @param out Output array, containing data computed in previous calls to this function.
 **/
-__global__ void autocorrelate(SensorsDataPacket packet, BinGroupsMultiSensorMemory binStructure, uint32 instantsProcessed, uint32 instants_per_packet, ResultArray out) {
+__global__ void autocorrelate(SensorsDataPacket packet, BinGroupsMultiSensorMemory binStructure, uint32 instantsProcessed, uint32 instantsPerPacket, ResultArray out) {
 	
 	//precondition: blockDim.x = groupSize, blockDim.y = sensorsPerBlock
 
@@ -204,7 +207,7 @@ __global__ void autocorrelate(SensorsDataPacket packet, BinGroupsMultiSensorMemo
 
 
 	//cycle over all of the new data, where i is the instant in time processed
-	for (int i = 0; i < instants_per_packet; ++i) {
+	for (int i = 0; i < instantsPerPacket; ++i) {
 		
 		instantsProcessed++;
 		//only one thread per sensor adds the new datum to the bin structure
