@@ -90,18 +90,18 @@ namespace utils {
 
     std::vector<uint16_t> generateTaus(size_t fullTimeLength, size_t binSize, size_t numBins) {
         std::vector<uint16_t> taus;
-        uint16_t tau = 0;
+        int32_t tau = -1;
 
         size_t maxLag = std::pow(2, numBins) * binSize;
         
         for (size_t i = 0; i < numBins; ++i) {
-            for(size_t j = 1; j < binSize; ++j){
-                taus.push_back(tau);
+            for(size_t j = 0; j < binSize; ++j){
 
                 tau += std::pow(2, std::floor((i * binSize)/ binSize));
                 if (tau > maxLag || tau >= fullTimeLength){
                     return taus;
                 }
+                taus.push_back(tau);
             }
         }
 
