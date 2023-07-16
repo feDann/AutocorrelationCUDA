@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "utils.h"
+#include "utils.hpp"
 #include "correlator.cuh"
 
 
