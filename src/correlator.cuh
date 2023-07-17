@@ -13,12 +13,11 @@ template<typename T>
 class Correlator {
 
     public:
-        Correlator(size_t num_bins, size_t bin_size, size_t num_sensors, size_t num_sensors_per_block = 8, int device = 0, bool verbose = false);
+        Correlator(size_t num_bins, size_t bin_size, size_t num_sensors, size_t num_sensors_per_block = 8, int device = 0, bool debug = false);
         ~Correlator();
 
         void alloc();
-        void correlate(T * new_values, size_t packet_size);
-        void outputs(T * correlations, uint32_t* t);
+        void correlate(T * new_values, size_t timepoints);
         T get(size_t sensor, size_t lag);
         void reset();
 
@@ -31,17 +30,20 @@ class Correlator {
         size_t num_sensors;
         size_t num_sensors_per_block;
 
+        size_t shared_memory_per_block;
+
         uint32_t max_tau;
+        uint32_t num_taus;
 
-        bool verbose;
+        bool debug;
 
-        T * correlation;
-        uint32_t * taus;
+        T * correlation = NULL;
+        uint32_t * taus = NULL;
 
         // device variables
-        T * d_shift_register;
-        T * d_accumulator;
-        T * d_correlation;
-        int * d_insert_indexes;
-        T * d_new_values;
+        T * d_shift_register = NULL;
+        T * d_accumulator = NULL;
+        T * d_correlation = NULL;
+        int * d_insert_indexes = NULL;
+        T * d_new_values = NULL;
 };
