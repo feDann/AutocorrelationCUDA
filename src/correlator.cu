@@ -25,7 +25,7 @@
 
 
 template <typename T>
-__global__ void MultiTau::correlate<T>(T * new_values, size_t packet_size, T * shift_register, T * accumulator, T * insert_indexes, T * correlation){
+__global__ void MultiTau::correlate<T>(T * new_values, size_t timepoints, T * shift_register, T * accumulator, int * insert_indexes, T * correlation){
 
 };
 
@@ -50,6 +50,9 @@ Correlator<T>::Correlator(size_t _num_bins, size_t _bin_size, size_t _num_sensor
 
     assert(shared_memory_per_block <= device_properties.sharedMemPerBlock && "ERROR: current configuration exceed device shared memory limits");
 
+    number_of_blocks = dim3(num_sensors / num_sensors_per_block, 1 , 1);
+    threads_per_block = dim3(bin_size, num_sensors_per_block, 1);
+
     if (debug){
         std::cout << "Number of bins: " << num_bins << std::endl;
         std::cout << "Size of bins: " << bin_size << std::endl;
@@ -58,6 +61,8 @@ Correlator<T>::Correlator(size_t _num_bins, size_t _bin_size, size_t _num_sensor
         std::cout << "Max tau possible: " << max_tau << std::endl;
         std::cout << "Number of taus possible: " << num_taus << std::endl;
         std::cout << "Shared Memory per block: " << shared_memory_per_block << std::endl;
+        std::cout << "Number of blocks: (" << number_of_blocks.x << "," << number_of_blocks.y << "," << number_of_blocks.z << ")" << std::endl;
+        std::cout << "Threads per blocks: (" << threads_per_block.x << "," << threads_per_block.y << "," << threads_per_block.z << ")" << std::endl;
     }    
 };
 
@@ -114,8 +119,9 @@ void Correlator<T>::correlate(T * new_values, size_t timepoints){
     CHECK(cudaMalloc(&d_new_values, timepoints * num_sensors * sizeof(T)));
     CHECK(cudaMemcpy(d_new_values, new_values, timepoints * num_sensors * sizeof(T), cudaMemcpyHostToDevice));
 
-    // Call autocorrelation kernel
-
+    MultiTau::correlate<T><<<number_of_blocks, threads_per_block, shared_memory_per_block>>>(d_new_values, timepoints, d_shift_register, d_accumulator, d_insert_indexes, d_correlation);
+    cudaDeviceSynchronize();
+    
     cudaFree(&d_new_values);
 };
 

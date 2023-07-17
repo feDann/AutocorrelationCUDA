@@ -5,7 +5,7 @@
 namespace MultiTau {
 
     template <typename T>
-    __global__ void correlate (T * new_values, size_t packet_size, T * shift_register, T * accumulator, T * insert_indexes, T * correlation);
+    __global__ void correlate (T * new_values, size_t timepoints, T * shift_register, T * accumulator, int * insert_indexes, T * correlation);
 
 }
 
