@@ -76,17 +76,22 @@ struct Options {
                     bin_size = atoi(optarg);
                     break;
                 case 'h':
-                    std::cout << "This program is designed to perform autocorrelation calculations on sensor data using CUDA, a parallel computing platform."<< std::endl <<std::endl;
-                    std::cout << "\t--debug, -d\t\t Activate debug prints" << std::endl;
-                    std::cout << "\t--results, -r\t\t Prints to stdout the results of the autocorrelation" << std::endl;
-                    std::cout << "\t--packets, -p\t\t Number of instant used per packets" << std::endl;
-                    std::cout << "\t--input_file, -i\t\t Name of the input file containing the sensor data. If not given random data will e used for the calculation of the autocorrelation" << std::endl;
-                    std::cout << "\t--output-file, -o \t\t Name of the output file. Correlation result will be saved into a csv file. If not given a default name will be used \"out.csv\"" << std::endl;
-                    std::cout << "\t--iterations, -I\t\t Number of times that the calculation is repeated. If it is greater than one the calculation of the autocorrelation will be repeated multiple times on the same data" << std::endl;
-                    std::cout << "\t--sensors, -s\t\t Number of Sensors present in the matrix of sensors" << std::endl;
-                    std::cout << "\t--groups, -l\t\t Number of bins used for each correlator of the sensor matrix" << std::endl;
-                    std::cout << "\t--group_size, -g\t\t Size of the bins for each correlator" << std::endl;
-                    std::cout << "\t--help, -h\t\t Print this help message" << std::endl;
+                    std::cout << "This program is designed to perform autocorrelation calculations on sensor data"<< std::endl;
+                    std::cout << "using CUDA, a parallel computing platform."<< std::endl <<std::endl;
+                    std::cout << "    [--debug, -d]           Activate debug prints" << std::endl <<std::endl;
+                    std::cout << "    [--results, -r]         Prints to stdout the results of the autocorrelation" << std::endl <<std::endl;
+                    std::cout << "    [--packets, -p]         Number of instant used per packets" << std::endl <<std::endl;
+                    std::cout << "    [--input_file, -i]      Name of the input file containing the sensor data" << std::endl;
+                    std::cout << "                            for the calculation of the autocorrelation" << std::endl <<std::endl;
+                    std::cout << "    [--output-file, -o]     Name of the output file. Correlation result will be saved into a csv file." << std::endl;
+                    std::cout << "                            If not given a default name will be used \"out.csv\"" << std::endl <<std::endl;
+                    std::cout << "    [--iterations, -I]      Number of times that the calculation is repeated. If it is greater than" << std::endl;
+                    std::cout << "                            one the calculation of the autocorrelation will be repeated multiple" << std::endl;
+                    std::cout << "                            times on the same data" << std::endl <<std::endl;
+                    std::cout << "    [--sensors, -s]         Number of Sensors present in the matrix of sensors" << std::endl <<std::endl;
+                    std::cout << "    [--groups, -l]          Number of bins used for each correlator of the sensor matrix" << std::endl <<std::endl;
+                    std::cout << "    [--group_size, -g]      Size of the bins for each correlator" << std::endl <<std::endl;
+                    std::cout << "    [--help, -h]            Print this help message" << std::endl <<std::endl;
                     exit(0);
                     break;
                 default:
