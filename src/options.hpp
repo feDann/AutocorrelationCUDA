@@ -76,7 +76,7 @@ struct Options {
                     bin_size = atoi(optarg);
                     break;
                 case 'h':
-                    std::cout << "This program is designed to perform autocorrelation calculations on sensor data"<< std::endl;
+                    std::cout << "This program is designed to perform autocorrelation calculations on a matrix of sensor data"<< std::endl;
                     std::cout << "using CUDA, a parallel computing platform."<< std::endl <<std::endl;
                     std::cout << "    [--debug, -d]           Activate debug prints" << std::endl <<std::endl;
                     std::cout << "    [--results, -r]         Prints to stdout the results of the autocorrelation" << std::endl <<std::endl;
