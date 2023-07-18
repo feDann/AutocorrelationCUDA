@@ -5,7 +5,8 @@
 namespace MultiTau {
 
     template <typename T>
-    __global__ void correlate (T * new_values, size_t timepoints, T * shift_register, T * accumulator, int * insert_indexes, T * correlation);
+    __global__ void 
+    correlate (T * new_values, const size_t timepoints, size_t instants_processed, T * shift_register, int * accumulator_positions, T * zero_delays, T * correlation, const size_t num_sensors_per_block, const size_t num_bins, const size_t bin_size);
 
 }
 
@@ -37,13 +38,15 @@ class Correlator {
 
         bool debug;
 
-        T * correlation = NULL;
-        uint32_t * taus = NULL;
+        T * correlation = nullptr;
+        uint32_t * taus = nullptr;
 
         // device variables
-        T * d_shift_register = NULL;
-        T * d_accumulator = NULL;
-        T * d_correlation = NULL;
-        int * d_insert_indexes = NULL;
-        T * d_new_values = NULL;
+        T * d_shift_register = nullptr;
+        int * d_accumulator_positions = nullptr;
+        T * d_zero_delays = nullptr;
+        T * d_correlation = nullptr;
+        T * d_new_values = nullptr;
+
+        size_t instants_processed = 0;
 };
