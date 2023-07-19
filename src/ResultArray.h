@@ -104,6 +104,13 @@ class ResultArray final {
 		cudaMemcpy(hostData, data, MAX_LAG * SENSORS * sizeof(uint32), cudaMemcpyDeviceToHost);
 	}
 
+	/**
+	* Reset all output data
+	**/
+	__host__ void reset() {		
+		cudaMemset(data, 0, SENSORS * MAX_LAG * sizeof(uint32));
+	}
+
 
 
 
