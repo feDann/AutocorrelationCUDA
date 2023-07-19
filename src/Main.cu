@@ -1,39 +1,13 @@
-﻿#ifdef _WIN32
-#include <WinSock2.h>
-#include <Windows.h>
-#include <stdint.h>
-
-int gettimeofday(struct timeval* tp, struct timezone* tzp)
-{
-	// Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
-	// This magic number is the number of 100 nanosecond intervals since January 1, 1601 (UTC)
-	// until 00:00:00 January 1, 1970 
-	static const uint64_t EPOCH = ((uint64_t)116444736000000000ULL);
-
-	SYSTEMTIME  system_time;
-	FILETIME    file_time;
-	uint64_t    time;
-
-	GetSystemTime(&system_time);
-	SystemTimeToFileTime(&system_time, &file_time);
-	time = ((uint64_t)file_time.dwLowDateTime);
-	time += ((uint64_t)file_time.dwHighDateTime) << 32;
-
-	tp->tv_sec = (long)((time - EPOCH) / 10000000L);
-	tp->tv_usec = (long)(system_time.wMilliseconds * 1000);
-	return 0;
-}
-
-#else
-#include <sys/time.h>
-#endif
-
-
-#include <cuda_runtime.h>
+﻿#include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include <iostream>
 #include <vector>
 #include <memory>
+#include <chrono>
+#include <fstream>
+
+namespace chrono = std::chrono;
+using clock_type = chrono::high_resolution_clock;
 
 #include "Definitions.h"
 #include "ResultArray.h"
@@ -83,70 +57,80 @@ int main(int argc, char* argv[]) {
 	Options options = Options(argc, argv);
 	std::vector<uint8> input;
 
-	// Parse or generate input
-	if (options.parse_file){
-		input = utils::parseCSV<uint8>(options.input_file);
-	} else {
-		input = utils::generateRandomData(options.packets, SENSORS);
-	}
+	if (options.debug) std::cout << "Reading input file" << std::endl;
+	input = utils::parseCSV<uint8>(options.input_file);
 
 	uint32 totalInstants = input.size() / SENSORS;
 	uint32 totalPackets = totalInstants / options.packets;
 
-	if (options.debug) std::cout << "Input vector total size: " << input.size() << std::endl;
-	if (options.debug) std::cout << "Total instants: " << totalInstants << std::endl;
-	if (options.debug) std::cout << "Total packets: " << totalPackets << std::endl;
+	dim3 numberOfBlocks = SENSORS / SENSORS_PER_BLOCK; 
+	dim3 threadsPerBlock {GROUP_SIZE, SENSORS_PER_BLOCK};
 
+	ResultArray out(options);
+	
+	if (options.debug) {
+		std::cout << "Input vector total size: " << input.size() << std::endl;
+		std::cout << "Total instants: " << totalInstants << std::endl;
+		std::cout << "Total packets: " << totalPackets << std::endl;
+	}
 
 	cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 	cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
 
-	// Initialize stuff for autocorrelation calculation
-	SensorsDataPacket inputArray(options);
-	BinGroupsMultiSensorMemory binStructure(options);
-	ResultArray out = binStructure.generateResultArray(options);
-
-
-	dim3 numberOfBlocks = SENSORS / SENSORS_PER_BLOCK; 
-	dim3 threadsPerBlock {GROUP_SIZE, SENSORS_PER_BLOCK};
-	
-	//timer
-	Timer timer{[options](std::vector<double> data){DataFile<double>::write(data, options.output_file);},
-									 [](){struct timeval tp;
-									      gettimeofday(&tp, NULL);
-									      return ((double)tp.tv_sec + (double)tp.tv_usec * 0.000001);}};
 	
 
-	timer.start();
 	for(int i = 0; i < options.iterations; i++){
-	uint32 timesCalled; //counter
-	for(timesCalled = 0; timesCalled < totalPackets; timesCalled++) {
-		if (options.debug) std::cout << "Executing packet: " << timesCalled << std::endl;
-		uint32 startPosition = timesCalled * options.packets * SENSORS;
-		inputArray.setNewDataPacket(input.data() + startPosition);
-		autocorrelate <<< numberOfBlocks, threadsPerBlock >>> (inputArray, binStructure, timesCalled * options.packets, options.packets, out);
-		cudaDeviceSynchronize();	
+		size_t timesCalled = 0;
+		SensorsDataPacket inputArray(options);
+		BinGroupsMultiSensorMemory binStructure(options);
+		out.reset();
+
+		if (options.debug) std::cout << "Starting iteration: " << i << std::endl;		
+
+		auto start = clock_type::now();
+	
+		
+		for(timesCalled = 0; timesCalled < totalPackets; timesCalled++) {
+			if (options.debug) std::cout << "Executing packet: " << timesCalled << std::endl;
+
+			uint32 startPosition = timesCalled * options.packets * SENSORS;
+			inputArray.setNewDataPacket(input.data() + startPosition);
+			autocorrelate <<< numberOfBlocks, threadsPerBlock >>> (inputArray, binStructure, timesCalled * options.packets, options.packets, out);
+			cudaDeviceSynchronize();	
 		}
-		timer.getInterval();
-		if (options.debug) std::cout << "Kernel called " << timesCalled << " times" << std::endl;
+
+		auto end = clock_type::now();
+		auto duration = chrono::duration<double>(end-start);
+
+		if (options.debug) {
+			std::cout << "Kernel called " << timesCalled << " times" << std::endl;
+			std::cout << "Correlation duration: " << duration.count() << " s" << std::endl;
+		}
+		else {
+			std::cout << duration.count() << std::endl;
+		}
 	}
-	timer.stop();
 	
 	out.download();	// Copy array of results from device memory to host memory
 	
 	// Print opt the result in csv format
 	if (options.results) {
-
+		std::ofstream outputFile(options.output_file);
 		auto taus = utils::generateTaus(totalInstants, GROUP_SIZE, GROUPS_PER_SENSOR);
 
 		for (int lag = 0; lag < taus.size(); lag++){
-			std::cout << taus[lag] ;
+			outputFile << taus[lag];
+			// std::cout << taus[lag] ;
 			for (int sensor = 0; sensor< SENSORS; sensor++){
 				auto value = out.get(sensor, lag);
-				std::cout << ',' << value;
+				// std::cout << ',' << value;
+				outputFile << ',' << value;
 			}
-			std::cout << std::endl;
+			// std::cout << std::endl;
+			outputFile << std::endl;
 		}
+
+		outputFile.close();
 	}
 	
 	cudaDeviceReset();
