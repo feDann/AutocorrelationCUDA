@@ -46,7 +46,7 @@ sleep 1
 echo "Running for 10000.csv"
 
 nvidia-smi $NVIDIA_SMI_ARGS -f "${OUTPUT_FOLDER}/10000-utilization.csv" & pid8=$!
-./main -p 1000 -i ../input/10000.csv  -o "${OUTPUT_FOLDER}/10000" $AUTOCORR_ARGS > "${OUTPUT_FOLDER}/10000" & pid7=$!
+./main -p 1000 -i ../input/10000.csv  -o "${OUTPUT_FOLDER}/10000.csv" $AUTOCORR_ARGS > "${OUTPUT_FOLDER}/10000" & pid7=$!
 
 wait $pid7
 sleep 1
@@ -57,7 +57,7 @@ sleep 1
 echo "Running for 30000.csv"
 
 nvidia-smi $NVIDIA_SMI_ARGS -f "${OUTPUT_FOLDER}/30000-utilization.csv" & pid10=$!
-./main -p 1000 -i ../input/30000.csv  -o "${OUTPUT_FOLDER}/30000" $AUTOCORR_ARGS > "${OUTPUT_FOLDER}/30000" & pid9=$!
+./main -p 1000 -i ../input/30000.csv  -o "${OUTPUT_FOLDER}/30000.csv" $AUTOCORR_ARGS > "${OUTPUT_FOLDER}/30000" & pid9=$!
 
 wait $pid9
 sleep 1
