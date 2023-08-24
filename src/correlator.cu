@@ -29,7 +29,7 @@
 
 template <typename T>
 __global__ void 
-MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_processed, T * shift_register, int * accumulator_positions, T * zero_delays, T * correlation, const size_t num_bins){
+MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_processed, T * shift_register, T * accumulator, int * accumulator_positions, T * zero_delays, T * correlation, const size_t num_bins){
 
     size_t first_sensor_of_block = blockIdx.x * blockDim.y;
     size_t group_channel = threadIdx.x + threadIdx.y * blockDim.x;
@@ -42,9 +42,10 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
     // Way to handle templates and dynamic shared memory
     extern __shared__ __align__(sizeof(T)) unsigned char total_shared_memory[];
 
-    T * block_shift_register = reinterpret_cast<T *>(total_shared_memory);
-    T * block_accumulator_positions = &block_shift_register[num_sensors_per_block * num_bins * bin_size];
-    T * block_zero_delays = &block_accumulator_positions[num_sensors_per_block * num_bins];
+    T * block_shift_register = reinterpret_cast<T *>(&total_shared_memory);
+    T * block_accumulator = &block_shift_register[num_sensors_per_block * num_bins * bin_size];
+    int * block_accumulator_positions = reinterpret_cast<int *>(&block_accumulator[num_sensors_per_block * num_bins]);
+    T * block_zero_delays = reinterpret_cast<T *>(&block_accumulator_positions[num_sensors_per_block * num_bins]);
     T * block_output = &block_zero_delays[num_sensors_per_block * num_bins];
 
 
@@ -102,7 +103,7 @@ Correlator<T>::Correlator(size_t t_num_bins, size_t t_bin_size, size_t t_num_sen
     max_tau = bin_size * std::pow(2, num_bins);
     num_taus = bin_size * num_bins;
 
-    shared_memory_per_block = ( 2 * (num_sensors_per_block * num_bins) + 2 *(num_sensors_per_block * num_bins * bin_size) ) * sizeof(T);
+    shared_memory_per_block = ( 2 * (num_sensors_per_block * num_bins) + 2 *(num_sensors_per_block * num_bins * bin_size) ) * sizeof(T) + (num_sensors_per_block * num_bins) * sizeof(int);
 
     assert(shared_memory_per_block <= device_properties.sharedMemPerBlock && "ERROR: current configuration exceed device shared memory limits");
 
@@ -136,6 +137,9 @@ Correlator<T>::~Correlator(){
     if (d_shift_register != nullptr){
         CHECK(cudaFree(d_shift_register));
     }
+    if (d_accumulator != nullptr){
+        CHECK(cudaFree(d_accumulator));
+    }
     if (d_accumulator_positions != nullptr){
         CHECK(cudaFree(d_accumulator_positions));
     }
@@ -154,7 +158,10 @@ template <typename T>
 void Correlator<T>::alloc(){
     if (debug) std::cout << "Allocating gpu arrays into global memory" << std::endl;
 
+    // In the previous version of the code the accumulator was the first position of every group in the shift_register_array
+    // here they are divided, the position in memory thus remain the same
     CHECK(cudaMalloc(&d_shift_register, num_bins * bin_size * num_sensors * sizeof(T)));
+    CHECK(cudaMalloc(&d_accumulator, num_bins * num_sensors * sizeof(T)));
     CHECK(cudaMalloc(&d_accumulator_positions, num_bins * num_sensors * sizeof(int)));
     CHECK(cudaMalloc(&d_zero_delays, num_bins * num_sensors * sizeof(T)));
     CHECK(cudaMalloc(&d_correlation, num_taus * num_sensors * sizeof(T)));
@@ -162,6 +169,7 @@ void Correlator<T>::alloc(){
     if (debug) std::cout << "Initializing device arrays" << std::endl;
 
     CHECK(cudaMemset(d_shift_register, 0, num_bins * bin_size * num_sensors * sizeof(T)));
+    CHECK(cudaMemset(d_accumulator, 0, num_bins * num_sensors * sizeof(T)));
     CHECK(cudaMemset(d_accumulator_positions, 0, num_bins * num_sensors * sizeof(int)));
     CHECK(cudaMemset(d_zero_delays, 0, num_bins * num_sensors * sizeof(T)));
     CHECK(cudaMemset(d_correlation, 0 , num_taus * num_sensors * sizeof(T)));
@@ -178,8 +186,9 @@ void Correlator<T>::correlate(T * new_values, size_t timepoints){
 
     if (debug) std::cout << "Starting correlation" << std::endl;
 
-    MultiTau::correlate<T><<<number_of_blocks, threads_per_block, shared_memory_per_block>>>(d_new_values, timepoints, instants_processed, d_shift_register, d_accumulator_positions, d_zero_delays, d_correlation, num_bins);
+    MultiTau::correlate<T><<<number_of_blocks, threads_per_block, shared_memory_per_block>>>(d_new_values, timepoints, instants_processed, d_shift_register, d_accumulator, d_accumulator_positions, d_zero_delays, d_correlation, num_bins);
     cudaDeviceSynchronize();
+    CHECK_KERNELCALL();
     
     if (d_new_values != nullptr){
         cudaFree(d_new_values);
@@ -193,6 +202,7 @@ void Correlator<T>::correlate(T * new_values, size_t timepoints){
 template <typename T>
 T Correlator<T>::get(size_t sensor, size_t lag){
     assert(0 && "Not implemented");
+    return;
 };
 
 template <typename T>
@@ -201,8 +211,9 @@ void Correlator<T>::reset(){
     if (debug) std::cout << "Resetting all gpu arrays to zero" << std::endl;
 
     CHECK(cudaMemset(d_shift_register, 0, num_bins * bin_size * num_sensors * sizeof(T)));
-    CHECK(cudaMemset(d_accumulator_positions, 0, num_bins * num_sensors * sizeof(T)));
-    CHECK(cudaMemset(d_zero_delays, 0, num_bins * num_sensors * sizeof(int)));
+    CHECK(cudaMemset(d_accumulator, 0, num_bins * num_sensors * sizeof(T)));
+    CHECK(cudaMemset(d_accumulator_positions, 0, num_bins * num_sensors * sizeof(int)));
+    CHECK(cudaMemset(d_zero_delays, 0, num_bins * num_sensors * sizeof(T)));
     CHECK(cudaMemset(d_correlation, 0 , num_taus * num_sensors * sizeof(T)));
 
     instants_processed = 0;
