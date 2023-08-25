@@ -38,6 +38,7 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
     size_t bin_size = blockDim.x;
     size_t num_sensors = gridDim.x * num_sensors_per_block;
     size_t sensor_relative_position = threadIdx.y;
+    size_t group_relative_position = threadIdx.x;
 
     // Way to handle templates and dynamic shared memory
     extern __shared__ __align__(sizeof(T)) unsigned char total_shared_memory[];
@@ -60,6 +61,7 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
     }
 
     if (group_channel < num_bins * num_sensors_per_block) {
+        block_accumulator[group_channel] = accumulator[group_channel +  (blockIdx.x * num_bins * num_sensors_per_block )];
         block_accumulator_positions[group_channel] = accumulator_positions[group_channel +  (blockIdx.x * num_bins * num_sensors_per_block )];
         block_zero_delays[group_channel] = zero_delays[group_channel +  (blockIdx.x * num_bins * num_sensors_per_block )];
     }
@@ -74,13 +76,26 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
         
         if (threadIdx.x < num_bins) {
             // Only ${num_bins} of threads per sensors insert the new datum in the correlator bins
-
+            // Start old BinGroupsMultiSensorMemory::insertNew
             if (threadIdx.x == 0) {
-                // TODO Add new datum to shift register
+                // Set the new datum to the accumulator
+                block_accumulator[block_accumulator_positions[sensor_relative_position + group_relative_position * num_sensors_per_block]] = new_values[i * num_sensors + (sensor_relative_position + first_sensor_of_block )];
             }
-
+            // Add the new value to the zero delay
+            block_zero_delays[sensor_relative_position + group_relative_position * num_sensors_per_block] = new_values[i * num_sensors + (sensor_relative_position + first_sensor_of_block )];
+            // End BinGroupsMultiSensorMemory::insertNew
         }
         __syncthreads();
+
+        size_t repeat_times = 1; //TODO Look why is there a call to that weird function
+        size_t last_group = repeat_times < num_bins ? repeat_times - 1 : num_bins -1;
+        for(size_t j = 0; j < repeat_times && j < num_bins; ++j){
+
+            // Add stuff
+            // block_output = block_zero_delays + block_shift_register;
+            __syncthreads();
+
+        }
 
     }
 };
@@ -201,8 +216,7 @@ void Correlator<T>::correlate(T * new_values, size_t timepoints){
 
 template <typename T>
 T Correlator<T>::get(size_t sensor, size_t lag){
-    assert(0 && "Not implemented");
-    return;
+    return correlation[lag * num_sensors + sensor];
 };
 
 template <typename T>
