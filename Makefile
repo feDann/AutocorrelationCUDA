@@ -5,7 +5,7 @@ CUDAFLAGS=--ptxas-options=-v -O4 -m64 -arch compute_61 -code sm_61 -Xptxas -dlcm
 BIN_FOLDER=bin
 SRC_FOLDER=src
 
-FILES=${SRC_FOLDER}/main.cu ${SRC_FOLDER}/utils.cpp ${SRC_FOLDER}/correlator.cu
+FILES=${SRC_FOLDER}/main.cu ${SRC_FOLDER}/correlator.cu
 
 all: main
 
