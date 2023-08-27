@@ -24,8 +24,6 @@
     }
 
 
-#define CHANNEL_SHARED_AT(array, position, bin, num_sensors, bin_size) array[position + (bin * num_sensors * bin_size)]
-#define CHANNEL_GLOBAL_AT(array, position, bin, num_sensors, bin_size, num_bins, global_offset) array[position + (bin * num_sensors * bin_size) + (global_offset * num_sensors * bin_size * num_bins)]
 
 __inline__ __device__ size_t
 MultiTau::repeatTimes(size_t instant){
