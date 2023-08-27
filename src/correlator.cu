@@ -261,7 +261,20 @@ void Correlator<T>::correlate(T * new_values, size_t timepoints){
 };
 
 template <typename T>
+void Correlator<T>::transfer(){    
+
+    if (debug) std::cout << "Transfering data from device memory to host memory" << std::endl;
+
+    CHECK(cudaMemcpy(d_correlation, correlation, num_taus * num_sensors * sizeof(T), cudaMemcpyDeviceToHost));
+    transfered = true;
+
+    if (debug) std::cout << "Data transfered" << std::endl;
+}
+
+
+template <typename T>
 T Correlator<T>::get(size_t sensor, size_t lag){
+    assert(transfered && "ERROR: Data not transfered from device memory to host memory");
     return correlation[lag * num_sensors + sensor];
 };
 
@@ -277,6 +290,7 @@ void Correlator<T>::reset(){
     CHECK(cudaMemset(d_correlation, 0 , num_taus * num_sensors * sizeof(T)));
 
     instants_processed = 0;
+    transfered = false;
 };
 
 // Needed for the template

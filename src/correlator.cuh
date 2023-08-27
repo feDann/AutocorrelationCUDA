@@ -21,6 +21,7 @@ class Correlator {
 
         void alloc();
         void correlate(T * new_values, size_t timepoints);
+        void transfer();
         T get(size_t sensor, size_t lag);
         void reset();
 
@@ -39,6 +40,7 @@ class Correlator {
         uint32_t num_taus;
 
         bool debug;
+        bool transfered;
 
         T * correlation = nullptr;
         uint32_t * taus = nullptr;
