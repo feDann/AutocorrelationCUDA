@@ -2,7 +2,7 @@
 #include <cassert>
 #include <cmath>
 
-
+#ifdef _DEBUG_MODE
 #define CHECK(call)                                                                       \
     {                                                                                     \
         const cudaError_t err = call;                                                     \
@@ -23,7 +23,10 @@
         }                                                                                 \
     }
 
-
+#else
+#define CHECK(call)                                                                       
+#define CHECK_KERNELCALL()                                                         
+#endif // DEBUG_MODE
 
 __inline__ __device__ size_t
 MultiTau::repeatTimes(size_t instant){

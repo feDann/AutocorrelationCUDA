@@ -16,3 +16,7 @@ main:
 	mkdir -p $(BIN_FOLDER)
 	$(CXX) $(FILES) $(CUDAFLAGS) -o $(BIN_FOLDER)/main
 
+debug:
+	mkdir -p $(BIN_FOLDER)
+	$(CXX) $(FILES) $(CUDAFLAGS) -D_DEBUG_MODE -o $(BIN_FOLDER)/main 
+
