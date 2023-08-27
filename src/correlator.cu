@@ -218,7 +218,7 @@ Correlator<T>::~Correlator(){
 
 template <typename T>
 void Correlator<T>::alloc(){
-    if (debug) std::cout << "Allocating gpu arrays into global memory" << std::endl;
+    if (debug) std::cout << "Allocating device arrays into global memory" << std::endl;
 
     // In the previous version of the code the accumulator was the first position of every group in the shift_register_array
     // here they are divided, the position in memory thus remain the same
@@ -235,6 +235,10 @@ void Correlator<T>::alloc(){
     CHECK(cudaMemset(d_accumulator_positions, 0, num_bins * num_sensors * sizeof(int)));
     CHECK(cudaMemset(d_zero_delays, 0, num_bins * num_sensors * sizeof(T)));
     CHECK(cudaMemset(d_correlation, 0 , num_taus * num_sensors * sizeof(T)));
+
+    if (debug) std::cout << "Alocating device arrays" << std::endl;
+
+    correlation = (T*)malloc(num_taus * num_sensors * sizeof(T));
 
 };
 
@@ -266,7 +270,7 @@ void Correlator<T>::transfer(){
 
     if (debug) std::cout << "Transfering data from device memory to host memory" << std::endl;
 
-    CHECK(cudaMemcpy(d_correlation, correlation, num_taus * num_sensors * sizeof(T), cudaMemcpyDeviceToHost));
+    CHECK(cudaMemcpy(correlation, d_correlation, num_taus * num_sensors * sizeof(T), cudaMemcpyDeviceToHost));
     transfered = true;
 
     if (debug) std::cout << "Data transfered" << std::endl;
@@ -282,13 +286,17 @@ T Correlator<T>::get(size_t sensor, size_t lag){
 template <typename T>
 void Correlator<T>::reset(){
 
-    if (debug) std::cout << "Resetting all gpu arrays to zero" << std::endl;
+    if (debug) std::cout << "Resetting all device arrays to zero" << std::endl;
 
     CHECK(cudaMemset(d_shift_register, 0, num_bins * bin_size * num_sensors * sizeof(T)));
     CHECK(cudaMemset(d_accumulator, 0, num_bins * num_sensors * sizeof(T)));
     CHECK(cudaMemset(d_accumulator_positions, 0, num_bins * num_sensors * sizeof(int)));
     CHECK(cudaMemset(d_zero_delays, 0, num_bins * num_sensors * sizeof(T)));
     CHECK(cudaMemset(d_correlation, 0 , num_taus * num_sensors * sizeof(T)));
+
+    if (debug) std::cout << "Resetting all host arrays to zero" << std::endl;
+
+    memset(correlation, 0, num_taus * num_sensors * sizeof(T));
 
     instants_processed = 0;
     transfered = false;
