@@ -8,6 +8,8 @@ namespace MultiTau {
     __global__ void 
     correlate (T * new_values, const size_t timepoints, size_t instants_processed, T * shift_register, T * accumulator, int * accumulator_positions, T * zero_delays, T * correlation, const size_t num_bins);
 
+    __inline__ __device__ size_t
+    repeatTimes(size_t instants);
 }
 
 template<typename T>

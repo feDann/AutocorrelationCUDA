@@ -27,6 +27,21 @@
 #define CHANNEL_SHARED_AT(array, position, bin, num_sensors, bin_size) array[position + (bin * num_sensors * bin_size)]
 #define CHANNEL_GLOBAL_AT(array, position, bin, num_sensors, bin_size, num_bins, global_offset) array[position + (bin * num_sensors * bin_size) + (global_offset * num_sensors * bin_size * num_bins)]
 
+__inline__ __device__ size_t
+MultiTau::repeatTimes(size_t instant){
+    size_t number_of_bits = sizeof(instant) * 8;
+
+    size_t mask = 1;
+
+    for (size_t i = 0; i < number_of_bits; ++i) {
+        if ((instant & mask) != 0){
+            return i + 1;
+        }
+        mask = mask << 1;
+    }
+    return number_of_bits;
+};
+
 template <typename T>
 __global__ void 
 MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_processed, T * shift_register, T * accumulator, int * accumulator_positions, T * zero_delays, T * correlation, const size_t num_bins){
@@ -87,16 +102,47 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
         }
         __syncthreads();
 
-        size_t repeat_times = 1; //TODO Look why is there a call to that weird function
-        size_t last_group = repeat_times < num_bins ? repeat_times - 1 : num_bins -1;
+        size_t repeat_times = MultiTau::repeatTimes(instants_processed);
+        size_t last_group = repeat_times < num_bins ? repeat_times - 1 : num_bins - 1;
+        
         for(size_t j = 0; j < repeat_times && j < num_bins; ++j){
 
+            size_t group = last_group - j;
             // Add stuff
-            // block_output = block_zero_delays + block_shift_register;
+            block_output[sensor_relative_position * (num_bins + bin_size) + group*bin_size + group_relative_position] += block_zero_delays[sensor_relative_position + group * num_sensors_per_block] * block_shift_register[sensor_relative_position * bin_size + group * num_sensors_per_block * bin_size];
             __syncthreads();
 
-        }
+            // Shift procedure
+            if (group_channel < num_sensors_per_block) {
+                //Update accumulator positions
+                block_accumulator_positions[group_channel + group*num_sensors_per_block] = (block_accumulator_positions[group_channel + group*num_sensors_per_block] -1) & (bin_size -1);
 
+                if (last_group - j < num_bins - 1){
+                    block_accumulator[block_accumulator_positions[group_channel + (group +1) * num_sensors_per_block]] = block_accumulator[block_accumulator_positions[group_channel + group * num_sensors_per_block]];
+                }
+
+                block_accumulator[block_accumulator_positions[group_channel + group * num_sensors_per_block]] = 0;
+                block_zero_delays[group_channel + group * num_sensors_per_block] = 0;
+
+            }
+            __syncthreads();
+
+        }  
+
+    }
+    // Copy data from shared memory to global memory
+    for (size_t i = 0; i < num_bins; ++i){
+        shift_register[group_channel +(i * num_sensors_per_block * bin_size) + (blockIdx.x * num_sensors_per_block * bin_size * num_bins)] = block_shift_register[group_channel + (i * num_sensors_per_block * bin_size)];
+    }
+
+    for (size_t i = 0; i < num_bins; ++i){
+        correlation[group_channel +(i * num_sensors_per_block * bin_size) + (blockIdx.x * num_sensors_per_block * bin_size * num_bins)] = block_output[group_channel + (i * num_sensors_per_block * bin_size)];
+    }
+
+    if (group_channel < num_bins * num_sensors_per_block) {
+        accumulator[group_channel +  (blockIdx.x * num_bins * num_sensors_per_block )] = block_accumulator[group_channel];
+        accumulator_positions[group_channel +  (blockIdx.x * num_bins * num_sensors_per_block )] = block_accumulator_positions[group_channel];
+        zero_delays[group_channel +  (blockIdx.x * num_bins * num_sensors_per_block )] = block_zero_delays[group_channel];
     }
 };
 
