@@ -9,7 +9,6 @@
 #define DEBUG false
 #define ITERATIONS 1
 #define PARSE_FILE false
-#define OUTPUT_FILE "out"
 #define NUM_BINS 10
 #define BIN_SIZE 32
 #define NUM_SENSORS 1024
@@ -28,7 +27,7 @@ struct Options {
     bool parse_file = PARSE_FILE;
 
     std::string input_file;
-    std::string output_file = OUTPUT_FILE;
+    std::string output_file;
 
     Options(int argc, char* argv[]){
         int opt;
@@ -101,6 +100,16 @@ struct Options {
 
         if( packet_size == -1){
             std::cerr << "ERROR: --packets is a required argument. Use --help for more details" << std::endl;
+            exit(1);
+        }
+
+        if(!parse_file){
+            std::cout << "ERROR: --input_file is a required argument. Use --help for more details" << std::endl;
+            exit(1);
+        }
+
+        if (results && output_file.empty()) {
+            std::cout << "ERROR: --output_file is a required argument. Use --help for more details" << std::endl;
             exit(1);
         }
 
