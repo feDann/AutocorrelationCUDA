@@ -7,16 +7,15 @@ SRC_FOLDER=src
 
 FILES=${SRC_FOLDER}/main.cu ${SRC_FOLDER}/correlator.cu
 
-all: main
+all: release
 
 clean:
-	rm $(BIN_FOLDER)/*
+	rm  -rf $(BIN_FOLDER)
 
-main:
+release:
 	mkdir -p $(BIN_FOLDER)
 	$(CXX) $(FILES) $(CUDAFLAGS) -o $(BIN_FOLDER)/main
 
 debug:
 	mkdir -p $(BIN_FOLDER)
-	$(CXX) $(FILES) $(CUDAFLAGS) -D_DEBUG_MODE -g -o $(BIN_FOLDER)/main 
-
+	$(CXX) $(FILES) $(CUDAFLAGS) -D_DEBUG_BUILD -g -o $(BIN_FOLDER)/main 
