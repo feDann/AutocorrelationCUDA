@@ -57,12 +57,12 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
     size_t group_relative_position = threadIdx.x;
 
     // Way to handle templates and dynamic shared memory
-    extern __shared__ __align__(sizeof(T)) unsigned char total_shared_memory[];
+    extern __shared__  unsigned char total_shared_memory[];
 
-    T * block_shift_register = reinterpret_cast<T *>(&total_shared_memory);
+    int * block_accumulator_positions = reinterpret_cast<int *>(&total_shared_memory);
+    T * block_shift_register = reinterpret_cast<T *>(&block_accumulator_positions[num_sensors_per_block * num_bins]);
     T * block_accumulator = &block_shift_register[num_sensors_per_block * num_bins * bin_size];
-    int * block_accumulator_positions = reinterpret_cast<int *>(&block_accumulator[num_sensors_per_block * num_bins]);
-    T * block_zero_delays = reinterpret_cast<T *>(&block_accumulator_positions[num_sensors_per_block * num_bins]);
+    T * block_zero_delays = &block_accumulator[num_sensors_per_block * num_bins];
     T * block_output = &block_zero_delays[num_sensors_per_block * num_bins];
 
 
@@ -165,6 +165,7 @@ Correlator<T>::Correlator(size_t t_num_bins, size_t t_bin_size, size_t t_num_sen
     max_tau = bin_size * std::pow(2, num_bins);
     num_taus = bin_size * num_bins;
 
+    //                         zero delays and accumulators                 shift registers and outputs                                   accumulator positions 
     shared_memory_per_block = ( 2 * (num_sensors_per_block * num_bins) + 2 *(num_sensors_per_block * num_bins * bin_size) ) * sizeof(T) + (num_sensors_per_block * num_bins) * sizeof(int);
 
     assert(shared_memory_per_block <= device_properties.sharedMemPerBlock && "ERROR: current configuration exceed device shared memory limits");
