@@ -2,14 +2,15 @@
 
 #include <cuda_runtime.h>
 #include <iostream>
+
+#define M 2 // Number of lag coalesced
+
 namespace MultiTau {
 
     template <typename T>
     __global__ void 
-    correlate (T * new_values, const size_t timepoints, size_t instants_processed, T * shift_register, int * accumulator_positions, T * zero_delays, T * correlation, const size_t num_bins);
+    correlate (T * new_values, const size_t timepoints, size_t instants_processed, T * shift_register, int * shift_positions, T * accumulators, int * num_accumulators, T * correlation,  const size_t num_bins);
 
-    __inline__ __device__ size_t
-    repeatTimes(size_t instants);
 }
 
 template<typename T>
@@ -39,18 +40,22 @@ class Correlator {
         uint32_t max_tau;
         uint32_t num_taus;
 
+        size_t instants_processed = 0;
+
         bool debug;
         bool transfered;
 
         T * correlation = nullptr;
-        uint32_t * taus = nullptr;
+        size_t * taus = nullptr;
 
-        // device variables
+        // Device variables
         T * d_shift_register = nullptr;
-        int * d_accumulator_positions = nullptr;
-        T * d_zero_delays = nullptr;
+        int * d_shift_positions = nullptr;
+
+        T * d_accumulators = nullptr;
+        int * d_num_accumulators = nullptr;
+
         T * d_correlation = nullptr;
         T * d_new_values = nullptr;
 
-        size_t instants_processed = 0;
 };
