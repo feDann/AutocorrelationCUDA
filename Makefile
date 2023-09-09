@@ -18,4 +18,4 @@ release:
 
 debug:
 	mkdir -p $(BIN_FOLDER)
-	$(CXX) $(FILES) $(CUDAFLAGS) -D_DEBUG_BUILD -g -o $(BIN_FOLDER)/main 
+	$(CXX) $(FILES) $(CUDAFLAGS) -D_DEBUG_BUILD -g -G -o $(BIN_FOLDER)/main 
