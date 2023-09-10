@@ -282,7 +282,16 @@ void Correlator<T>::transfer(){
 template <typename T>
 T Correlator<T>::get(size_t sensor, size_t lag){
     assert(transfered && "ERROR: Data not transfered from device memory to host memory");
-    return correlation[lag * num_sensors + sensor];
+    
+    if (lag < bin_size)
+        return correlation[sensor * num_bins * bin_size + lag];
+    
+    int bin = std::ceil((double)(lag - bin_size + 1) / (double)(bin_size/2));
+    int channel = (lag - bin_size) - (bin_size/2) * (bin-1) + (bin_size/2);
+
+    std::cout << "Lag: " << lag << " Bin: " << bin << " Channel: " << channel << std::endl;
+    
+    return correlation[sensor * num_bins * bin_size + bin * num_sensors_per_block * bin_size + channel];
 };
 
 template <typename T>
