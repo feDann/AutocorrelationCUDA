@@ -144,7 +144,7 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
 
 
 template <typename T>
-Correlator<T>::Correlator(size_t t_num_bins, size_t t_bin_size, size_t t_num_sensors,size_t t_num_sensors_per_block, int t_device, bool t_debug){    
+Correlator<T>::Correlator(size_t t_num_bins, size_t t_bin_size, size_t t_num_sensors, int t_device, bool t_debug){    
     cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
     cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
 
@@ -154,30 +154,37 @@ Correlator<T>::Correlator(size_t t_num_bins, size_t t_bin_size, size_t t_num_sen
     num_bins = t_num_bins;
     bin_size = t_bin_size;
     num_sensors = t_num_sensors;
-    num_sensors_per_block = t_num_sensors_per_block;
     debug = t_debug;
 
     max_tau = bin_size * std::pow(2, num_bins);
     num_taus = bin_size * num_bins;
 
-    //                          accumulators                            shift_registers and outputs                                      accumulator and num_accumulator 
-    shared_memory_per_block = ((num_sensors_per_block * num_bins) + 2 * (num_sensors_per_block * num_bins * bin_size) ) * sizeof(T) + 2 * (num_sensors_per_block * num_bins) * sizeof(int);
+    //                        accumulators    shift_registers and outputs          accumulator and num_accumulator 
+    shared_memory_per_block = (num_bins + 2 * (num_bins * bin_size) ) * sizeof(T) + 2 * (num_bins) * sizeof(int);
+    num_sensors_per_block = std::floor((double) device_properties.sharedMemPerBlock / shared_memory_per_block);
 
-    assert(shared_memory_per_block <= device_properties.sharedMemPerBlock && "ERROR: current configuration exceed device shared memory limits");
+    shared_memory_per_block *= num_sensors_per_block;
+
+    assert(shared_memory_per_block <= device_properties.sharedMemPerBlock && num_sensors_per_block > 0 && "ERROR: current configuration exceed device shared memory limits");
+
+    if (num_sensors_per_block <= MIN_SENSORS_PER_BOOCK && debug) {
+        std::cout << "[WARNING] num_sensors_per_block is low, consider changing the current configuration of bin_size and num_bins" << std::endl;
+    }
 
     number_of_blocks = dim3(num_sensors / num_sensors_per_block, 1 , 1);
     threads_per_block = dim3(bin_size, num_sensors_per_block, 1);
 
     if (debug){
-        std::cout << "Number of bins: " << num_bins << std::endl;
-        std::cout << "Size of bins: " << bin_size << std::endl;
-        std::cout << "Number of sensors: " << num_sensors << std::endl;
-        std::cout << "Number of sensors per block: " << num_sensors_per_block << std::endl;
-        std::cout << "Max tau possible: " << max_tau << std::endl;
-        std::cout << "Number of taus possible: " << num_taus << std::endl;
-        std::cout << "Shared Memory per block: " << shared_memory_per_block << " B" << std::endl;
-        std::cout << "Number of blocks: (" << number_of_blocks.x << "," << number_of_blocks.y << "," << number_of_blocks.z << ")" << std::endl;
-        std::cout << "Threads per blocks: (" << threads_per_block.x << "," << threads_per_block.y << "," << threads_per_block.z << ")" << std::endl;
+        std::cout << "[INFO] Number of bins: " << num_bins << std::endl;
+        std::cout << "[INFO] Size of bins: " << bin_size << std::endl;
+        std::cout << "[INFO] Number of sensors: " << num_sensors << std::endl;
+        std::cout << "[INFO] Number of sensors per block: " << num_sensors_per_block << std::endl;
+        std::cout << "[INFO] Max tau possible: " << max_tau << std::endl;
+        std::cout << "[INFO] Number of taus possible: " << num_taus << std::endl;
+        std::cout << "[INFO] Shared Memory per block: " << shared_memory_per_block << " B" << std::endl;
+        std::cout << "[INFO] Maximum shared memory available: " << device_properties.sharedMemPerBlock << " B" << std::endl;
+        std::cout << "[INFO] Number of blocks: (" << number_of_blocks.x << "," << number_of_blocks.y << "," << number_of_blocks.z << ")" << std::endl;
+        std::cout << "[INFO] Threads per blocks: (" << threads_per_block.x << "," << threads_per_block.y << "," << threads_per_block.z << ")" << std::endl;
     }    
 };
 
@@ -217,7 +224,7 @@ Correlator<T>::~Correlator(){
 
 template <typename T>
 void Correlator<T>::alloc(){
-    if (debug) std::cout << "Allocating device arrays into global memory" << std::endl;
+    if (debug) std::cout << "[INFO] Allocating device arrays into global memory" << std::endl;
 
     CHECK(cudaMalloc(&d_shift_register, num_bins * bin_size * num_sensors * sizeof(T)));
     CHECK(cudaMalloc(&d_shift_positions, num_bins * num_sensors * sizeof(int)));
@@ -227,7 +234,7 @@ void Correlator<T>::alloc(){
 
     CHECK(cudaMalloc(&d_correlation, num_taus * num_sensors * sizeof(T)));
 
-    if (debug) std::cout << "Initializing device arrays" << std::endl;
+    if (debug) std::cout << "[INFO] Initializing device arrays" << std::endl;
 
     CHECK(cudaMemset(d_shift_register, 0, num_bins * bin_size * num_sensors * sizeof(T)));
     CHECK(cudaMemset(d_shift_positions, 0, num_bins * num_sensors * sizeof(int)));
@@ -237,7 +244,7 @@ void Correlator<T>::alloc(){
 
     CHECK(cudaMemset(d_correlation, 0 , num_taus * num_sensors * sizeof(T)));
 
-    if (debug) std::cout << "Alocating device arrays" << std::endl;
+    if (debug) std::cout << "[INFO] Alocating device arrays" << std::endl;
 
     correlation = (T*)malloc(num_taus * num_sensors * sizeof(T));
 
@@ -248,12 +255,12 @@ void Correlator<T>::correlate(T * new_values, size_t timepoints){
 
     transfered = false;
 
-    if (debug) std::cout << "Allocating and copying new values to gpu array" << std::endl;
+    if (debug) std::cout << "[INFO] Allocating and copying new values to gpu array" << std::endl;
 
     CHECK(cudaMalloc(&d_new_values, timepoints * num_sensors * sizeof(T)));
     CHECK(cudaMemcpy(d_new_values, new_values, timepoints * num_sensors * sizeof(T), cudaMemcpyHostToDevice));
 
-    if (debug) std::cout << "Starting correlation" << std::endl;
+    if (debug) std::cout << "[INFO] Starting correlation" << std::endl;
 
     MultiTau::correlate<T><<<number_of_blocks, threads_per_block, shared_memory_per_block>>>(d_new_values, timepoints, instants_processed, d_shift_register, d_shift_positions, d_accumulators, d_num_accumulators, d_correlation, num_bins);
     cudaDeviceSynchronize();
@@ -263,7 +270,7 @@ void Correlator<T>::correlate(T * new_values, size_t timepoints){
         cudaFree(d_new_values);
     }
 
-    if (debug) std::cout << "Instant Processed: " << instants_processed << std::endl;
+    if (debug) std::cout << "[INFO] Instant Processed: " << instants_processed << std::endl;
 
     instants_processed += timepoints;
 };
@@ -271,14 +278,14 @@ void Correlator<T>::correlate(T * new_values, size_t timepoints){
 template <typename T>
 void Correlator<T>::transfer(){    
 
-    if (debug) std::cout << "Transfering data from device memory to host memory" << std::endl;
+    if (debug) std::cout << "[INFO] Transfering data from device memory to host memory" << std::endl;
 
     if (!transfered){
         CHECK(cudaMemcpy(correlation, d_correlation, num_taus * num_sensors * sizeof(T), cudaMemcpyDeviceToHost));
         transfered = true;
     }
 
-    if (debug) std::cout << "Data transfered" << std::endl;
+    if (debug) std::cout << "[INFO] Data transfered" << std::endl;
 }
 
 
@@ -301,7 +308,7 @@ T Correlator<T>::get(size_t sensor, size_t lag){
 template <typename T>
 void Correlator<T>::reset(){
 
-    if (debug) std::cout << "Resetting all device arrays to zero" << std::endl;
+    if (debug) std::cout << "[INFO] Resetting all device arrays to zero" << std::endl;
 
     CHECK(cudaMemset(d_shift_register, 0, num_bins * bin_size * num_sensors * sizeof(T)));
     CHECK(cudaMemset(d_shift_positions, 0, num_bins * num_sensors * sizeof(int)));
@@ -311,7 +318,7 @@ void Correlator<T>::reset(){
 
     CHECK(cudaMemset(d_correlation, 0 , num_taus * num_sensors * sizeof(T)));
 
-    if (debug) std::cout << "Resetting all host arrays to zero" << std::endl;
+    if (debug) std::cout << "[INFO] Resetting all host arrays to zero" << std::endl;
 
     memset(correlation, 0, num_taus * num_sensors * sizeof(T));
 

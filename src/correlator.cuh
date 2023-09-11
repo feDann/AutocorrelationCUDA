@@ -4,7 +4,7 @@
 #include <iostream>
 
 #define M 2 // Number of lag coalesced
-
+#define MIN_SENSORS_PER_BOOCK 4
 namespace MultiTau {
 
     template <typename T>
@@ -17,7 +17,7 @@ template<typename T>
 class Correlator {
 
     public:
-        Correlator(size_t num_bins, size_t bin_size, size_t num_sensors, size_t num_sensors_per_block = 8, int device = 0, bool debug = false);
+        Correlator(size_t num_bins, size_t bin_size, size_t num_sensors, int device = 0, bool debug = false);
         ~Correlator();
 
         void alloc();

@@ -11,9 +11,9 @@ using clock_type = chrono::high_resolution_clock;
 
 int main (int argc, char* argv[]){
     Options options(argc, argv);
-    Correlator<uint32_t> correlator(options.num_bins, options.bin_size, options.num_sensors, options.num_sensors_per_block, 0, options.debug);
+    Correlator<uint32_t> correlator(options.num_bins, options.bin_size, options.num_sensors, 0, options.debug);
     
-    if (options.debug) std::cout << "Reading input file" << std::endl;
+    if (options.debug) std::cout << "[INFO] Reading input file" << std::endl;
     std::vector<uint32_t> data = utils::parse_csv<uint32_t>(options.input_file);
     
     correlator.alloc();
@@ -26,10 +26,10 @@ int main (int argc, char* argv[]){
 
         auto start = clock_type::now();
 
-        if (options.debug) std::cout << "Starting iteration: " << i << std::endl;
+        if (options.debug) std::cout << "[INFO] Starting iteration: " << i << std::endl;
 
         for (size_t j = 0; j < total_packets; ++j){
-            if (options.debug) std::cout << "Executing packet " << j << std::endl;
+            if (options.debug) std::cout << "[INFO] Executing packet " << j << std::endl;
 
             size_t starting_position = j * options.packet_size * options.num_sensors;
             correlator.correlate(data.data() + starting_position, options.packet_size);
@@ -56,6 +56,13 @@ int main (int argc, char* argv[]){
 			}
 			output_file << std::endl;
 		}
+
+        // for (size_t bin = 0 ; bin < options.num_bins; ++bin) {
+            // for(size_t channel = 0; channel < options.bin_size ; ++channel) {
+                // output_file << "," << correlator.correlation[bin * 8 * options.bin_size + channel] ;
+            // }
+            // output_file << std::endl;
+        // }
 
 		output_file.close();
     }

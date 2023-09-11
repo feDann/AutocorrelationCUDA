@@ -43,11 +43,10 @@ struct Options {
                                                 {"sensors", optional_argument, 0, 's'},
                                                 {"levels", optional_argument, 0, 'l'},
                                                 {"group_size", optional_argument, 0, 'g'},
-                                                {"sensors_per_block", optional_argument, 0, 'b'},
                                                 {"help", no_argument, 0, 'h'},
                                                 {0,0,0,0}};
 
-        while(( opt = getopt_long(argc, argv, "hdrp:i:o:I:s:l:g:b:", long_options, &option_index) ) != EOF ) {
+        while(( opt = getopt_long(argc, argv, "hdrp:i:o:I:s:l:g:", long_options, &option_index) ) != EOF ) {
             switch (opt) {
                 case 'd':
                     debug = true;
@@ -76,9 +75,6 @@ struct Options {
                     break;
                 case 'g':
                     bin_size = atoi(optarg);
-                    break;
-                case 'b':
-                    num_sensors_per_block = atoi(optarg);
                     break;
                 case 'h':
                     std::cout << "This program is designed to perform autocorrelation calculations on a matrix of sensor data"<< std::endl;
