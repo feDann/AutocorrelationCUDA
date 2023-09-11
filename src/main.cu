@@ -14,7 +14,7 @@ int main (int argc, char* argv[]){
     Correlator<uint32_t> correlator(options.num_bins, options.bin_size, options.num_sensors, options.num_sensors_per_block, 0, options.debug);
     
     if (options.debug) std::cout << "Reading input file" << std::endl;
-    std::vector<uint32_t> data = utils::parseCSV<uint32_t>(options.input_file);
+    std::vector<uint32_t> data = utils::parse_csv<uint32_t>(options.input_file);
     
     correlator.alloc();
 
@@ -45,19 +45,19 @@ int main (int argc, char* argv[]){
     correlator.transfer();
 
     if (options.results) {
-        std::ofstream outputFile(options.output_file);
-		auto taus = utils::generateTaus(total_instants, options.bin_size, options.num_bins);
+        std::ofstream output_file(options.output_file);
+		auto taus = utils::generate_taus(total_instants, options.bin_size, options.num_bins);
 
 		for (int lag = 0; lag < taus.size(); lag++){
-			outputFile << taus[lag];
+			output_file << taus[lag];
 			for (int sensor = 0; sensor < options.num_sensors; ++sensor){
 				auto value = correlator.get(sensor, lag);
-				outputFile << ',' << value;
+				output_file << ',' << value;
 			}
-			outputFile << std::endl;
+			output_file << std::endl;
 		}
 
-		outputFile.close();
+		output_file.close();
     }
 
 
