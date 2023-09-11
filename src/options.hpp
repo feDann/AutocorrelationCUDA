@@ -12,6 +12,7 @@
 #define NUM_BINS 10
 #define BIN_SIZE 32
 #define NUM_SENSORS 1024
+#define NUM_SENSORS_PER_BLOCK 8
 
 
 struct Options {
@@ -22,6 +23,7 @@ struct Options {
     size_t num_bins = NUM_BINS;
     size_t bin_size = BIN_SIZE;
     size_t num_sensors = NUM_SENSORS;
+    size_t num_sensors_per_block = NUM_SENSORS_PER_BLOCK;
 
     bool results = false;
     bool parse_file = PARSE_FILE;
@@ -39,12 +41,13 @@ struct Options {
                                                 {"output_file", optional_argument, 0, 'o'},
                                                 {"iterations", optional_argument, 0, 'I'},
                                                 {"sensors", optional_argument, 0, 's'},
-                                                {"groups", optional_argument, 0, 'l'},
+                                                {"levels", optional_argument, 0, 'l'},
                                                 {"group_size", optional_argument, 0, 'g'},
+                                                {"sensors_per_block", optional_argument, 0, 'b'},
                                                 {"help", no_argument, 0, 'h'},
                                                 {0,0,0,0}};
 
-        while(( opt = getopt_long(argc, argv, "hdrp:i:o:I:s:l:g:", long_options, &option_index) ) != EOF ) {
+        while(( opt = getopt_long(argc, argv, "hdrp:i:o:I:s:l:g:b:", long_options, &option_index) ) != EOF ) {
             switch (opt) {
                 case 'd':
                     debug = true;
@@ -73,6 +76,9 @@ struct Options {
                     break;
                 case 'g':
                     bin_size = atoi(optarg);
+                    break;
+                case 'b':
+                    num_sensors_per_block = atoi(optarg);
                     break;
                 case 'h':
                     std::cout << "This program is designed to perform autocorrelation calculations on a matrix of sensor data"<< std::endl;
@@ -112,7 +118,6 @@ struct Options {
             std::cout << "ERROR: --output_file is a required argument. Use --help for more details" << std::endl;
             exit(1);
         }
-
 
     }
 };

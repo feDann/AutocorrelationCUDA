@@ -11,7 +11,7 @@ using clock_type = chrono::high_resolution_clock;
 
 int main (int argc, char* argv[]){
     Options options(argc, argv);
-    Correlator<uint32_t> correlator(options.num_bins, options.bin_size, options.num_sensors, 8, 0, options.debug);
+    Correlator<uint32_t> correlator(options.num_bins, options.bin_size, options.num_sensors, options.num_sensors_per_block, 0, options.debug);
     
     if (options.debug) std::cout << "Reading input file" << std::endl;
     std::vector<uint32_t> data = utils::parseCSV<uint32_t>(options.input_file);
