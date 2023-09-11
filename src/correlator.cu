@@ -102,7 +102,7 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
         
         __syncthreads();
         
-        for(unsigned int bin = 1; block_num_accumulators[SHARED_OFF_B(sensor, bin - 1, num_sensors_per_block)] == M ; ++bin) {
+        for(unsigned int bin = 1; bin < num_bins && block_num_accumulators[SHARED_OFF_B(sensor, bin - 1, num_sensors_per_block)] == M  ; ++bin) {
             __syncthreads();
 
             int insert_channel = block_shift_pos[SHARED_OFF_B(sensor, bin, num_sensors_per_block)];
