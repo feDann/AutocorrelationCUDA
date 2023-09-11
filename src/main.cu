@@ -1,17 +1,20 @@
 #include <iostream>
 #include <vector>
+#include <chrono>
 
 #include "utils.hpp"
 #include "options.hpp"
 #include "correlator.cuh"
 
+namespace chrono = std::chrono;
+using clock_type = chrono::high_resolution_clock;
 
 int main (int argc, char* argv[]){
     Options options(argc, argv);
-    Correlator<int32_t> correlator(options.num_bins, options.bin_size, options.num_sensors, 8, 0, options.debug);
+    Correlator<uint32_t> correlator(options.num_bins, options.bin_size, options.num_sensors, 8, 0, options.debug);
     
     if (options.debug) std::cout << "Reading input file" << std::endl;
-    std::vector<int32_t> data = utils::parseCSV<int32_t>(options.input_file);
+    std::vector<uint32_t> data = utils::parseCSV<uint32_t>(options.input_file);
     
     correlator.alloc();
 
@@ -21,6 +24,8 @@ int main (int argc, char* argv[]){
     for(size_t i = 0; i < options.iterations; ++i){
         correlator.reset();
 
+        auto start = clock_type::now();
+
         if (options.debug) std::cout << "Starting iteration: " << i << std::endl;
 
         for (size_t j = 0; j < total_packets; ++j){
@@ -29,6 +34,11 @@ int main (int argc, char* argv[]){
             size_t starting_position = j * options.packet_size * options.num_sensors;
             correlator.correlate(data.data() + starting_position, options.packet_size);
         }
+
+        auto end = clock_type::now();
+        auto duration = chrono::duration<double>(end-start);
+
+        if (!options.debug) std::cout << duration.count() << std::endl;
 
     }
 
@@ -40,7 +50,7 @@ int main (int argc, char* argv[]){
 
 		// for (int lag = 0; lag < taus.size(); lag++){
 		// 	outputFile << taus[lag];
-		// 	for (int sensor = 0; sensor < 1; sensor++){
+		// 	for (int sensor = 0; sensor < options.num_sensors; ++sensor){
 		// 		auto value = correlator.get(sensor, lag);
 		// 		outputFile << ',' << value;
 		// 	}
@@ -49,7 +59,7 @@ int main (int argc, char* argv[]){
 
 
         // for (size_t bin = 0 ; bin < options.num_bins; ++bin) {
-        //     for(size_t channel = 0; channel < options.bin_size; ++channel) {
+        //     for(size_t channel = 0; channel < options.bin_size * 2; ++channel) {
         //         outputFile << "," << correlator.correlation[bin * 8 * options.bin_size + channel] ;
         //     }
         //     outputFile << std::endl;
