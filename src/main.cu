@@ -48,22 +48,14 @@ int main (int argc, char* argv[]){
         std::ofstream outputFile(options.output_file);
 		auto taus = utils::generateTaus(total_instants, options.bin_size, options.num_bins);
 
-		// for (int lag = 0; lag < taus.size(); lag++){
-		// 	outputFile << taus[lag];
-		// 	for (int sensor = 0; sensor < options.num_sensors; ++sensor){
-		// 		auto value = correlator.get(sensor, lag);
-		// 		outputFile << ',' << value;
-		// 	}
-		// 	outputFile << std::endl;
-		// }
-
-
-        // for (size_t bin = 0 ; bin < options.num_bins; ++bin) {
-        //     for(size_t channel = 0; channel < options.bin_size * 2; ++channel) {
-        //         outputFile << "," << correlator.correlation[bin * 8 * options.bin_size + channel] ;
-        //     }
-        //     outputFile << std::endl;
-        // }
+		for (int lag = 0; lag < taus.size(); lag++){
+			outputFile << taus[lag];
+			for (int sensor = 0; sensor < options.num_sensors; ++sensor){
+				auto value = correlator.get(sensor, lag);
+				outputFile << ',' << value;
+			}
+			outputFile << std::endl;
+		}
 
 		outputFile.close();
     }

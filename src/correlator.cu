@@ -124,7 +124,6 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
 
         }
 
-        ++instants_processed;
         __syncthreads();
 
     }
@@ -247,6 +246,8 @@ void Correlator<T>::alloc(){
 template <typename T>
 void Correlator<T>::correlate(T * new_values, size_t timepoints){
 
+    transfered = false;
+
     if (debug) std::cout << "Allocating and copying new values to gpu array" << std::endl;
 
     CHECK(cudaMalloc(&d_new_values, timepoints * num_sensors * sizeof(T)));
@@ -272,8 +273,10 @@ void Correlator<T>::transfer(){
 
     if (debug) std::cout << "Transfering data from device memory to host memory" << std::endl;
 
-    CHECK(cudaMemcpy(correlation, d_correlation, num_taus * num_sensors * sizeof(T), cudaMemcpyDeviceToHost));
-    transfered = true;
+    if (!transfered){
+        CHECK(cudaMemcpy(correlation, d_correlation, num_taus * num_sensors * sizeof(T), cudaMemcpyDeviceToHost));
+        transfered = true;
+    }
 
     if (debug) std::cout << "Data transfered" << std::endl;
 }
@@ -283,15 +286,16 @@ template <typename T>
 T Correlator<T>::get(size_t sensor, size_t lag){
     assert(transfered && "ERROR: Data not transfered from device memory to host memory");
     
+    int block = std::floor((double) sensor / num_sensors_per_block);
+    int sensor_rp = sensor - block * num_sensors_per_block;
+    
     if (lag < bin_size)
-        return correlation[sensor * num_bins * bin_size + lag];
+        return correlation[block * num_sensors_per_block * num_bins * bin_size + sensor_rp * bin_size + lag];
     
     int bin = std::ceil((double)(lag - bin_size + 1) / (double)(bin_size/2));
     int channel = (lag - bin_size) - (bin_size/2) * (bin-1) + (bin_size/2);
 
-    std::cout << "Lag: " << lag << " Bin: " << bin << " Channel: " << channel << std::endl;
-    
-    return correlation[sensor * num_bins * bin_size + bin * num_sensors_per_block * bin_size + channel];
+    return correlation[block * num_sensors_per_block * num_bins * bin_size + sensor_rp * bin_size  +  bin * num_sensors_per_block * bin_size + channel];
 };
 
 template <typename T>
