@@ -75,9 +75,9 @@ namespace utils {
 
     std::vector<uint16_t> generate_taus(const size_t full_time_len, const size_t bin_size, const size_t num_bins, const size_t m = 2) {
         std::vector<uint16_t> taus;
-        size_t maxLag = std::pow(m, num_bins - 1) * (bin_size/2) + bin_size;
-        
-        for (size_t i = 0; i < bin_size * 2; ++i){
+        size_t max_lag = std::pow((double)m, num_bins - 1) * (bin_size/2) + bin_size;        
+
+        for (size_t i = 0; i < bin_size; ++i){
             if (i > full_time_len){
                     return taus;
             }
@@ -85,11 +85,13 @@ namespace utils {
         }
 
         for (size_t i = 1; i < num_bins; ++i) {
-            for(size_t j = (bin_size); j < bin_size * 2; ++j){               
+            for(size_t j = (bin_size/2); j < bin_size; ++j){               
 
                 size_t p = std::pow((double)m,i);
                 size_t tau = j * p;
-                if (tau > maxLag || tau > full_time_len - p){
+                if (tau > max_lag || tau > full_time_len - p){
+
+
                     return taus;
                 }
                 taus.push_back(tau);

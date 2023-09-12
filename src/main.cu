@@ -15,13 +15,19 @@ int main (int argc, char* argv[]){
     
     if (options.debug) std::cout << "[INFO] Reading input file" << std::endl;
     std::vector<uint32_t> data = utils::parse_csv<uint32_t>(options.input_file);
-    
-    correlator.alloc();
 
     size_t total_instants = data.size() / options.num_sensors;
-    size_t total_packets = total_instants / options.packet_size;
+    size_t total_packets = total_instants / options.packet_size;    
+
+    if (options.debug) {
+        std::cout << "[INFO] Total instants: " << total_instants << std::endl;
+        std::cout << "[INFO] Total packets: " << total_packets << std::endl;
+    }
+
+    correlator.alloc();
 
     for(size_t i = 0; i < options.iterations; ++i){
+
         correlator.reset();
 
         auto start = clock_type::now();
@@ -46,7 +52,7 @@ int main (int argc, char* argv[]){
 
     if (options.results) {
         std::ofstream output_file(options.output_file);
-		auto taus = utils::generate_taus(total_instants, options.bin_size, options.num_bins);
+		auto taus = utils::generate_taus(total_instants, options.bin_size * 2, options.num_bins);
 
 		for (int lag = 0; lag < taus.size(); lag++){
 			output_file << taus[lag];
@@ -57,10 +63,10 @@ int main (int argc, char* argv[]){
 			output_file << std::endl;
 		}
 
-        // size_t sensor_offset = 523776;
+        // size_t sensor_offset = 0;
         // for (size_t bin = 0 ; bin < options.num_bins; ++bin) {
         //     for(size_t channel = 0; channel < options.bin_size * 2 ; ++channel) {
-        //         output_file << "," << correlator.correlation[sensor_offset + bin * 1 * options.bin_size * 2 + channel] ;
+        //         output_file << "," << correlator.correlation[sensor_offset + bin * correlator.num_sensors_per_block * options.bin_size * 2 + channel] ;
         //     }
         //     output_file << std::endl;
         // }
