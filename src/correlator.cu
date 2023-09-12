@@ -67,7 +67,10 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
     T * block_correlation = &block_shift[num_sensors_per_block * num_bins * bin_size];
     T * block_accumulators = &block_correlation[num_sensors_per_block * num_bins * bin_size];
 
+    int clamp_mask = first_block_sensor + num_sensors_per_block >= num_sensors;
+    num_sensors_per_block = (num_sensors - first_block_sensor) * clamp_mask + num_sensors_per_block * (1 - clamp_mask);
     
+
     if ( sensor_gp < num_sensors ) {
 
         // Copy correlator arrays from global memory to shared memory
@@ -294,17 +297,19 @@ void Correlator<T>::transfer(){
 template <typename T>
 T Correlator<T>::get(size_t sensor, size_t lag){
     assert(transfered && "ERROR: Data not transfered from device memory to host memory");
-    
-    int block = std::floor((double) sensor / num_sensors_per_block);
-    int sensor_rp = sensor - block * num_sensors_per_block;
-    
+
+    size_t block = std::floor((double) sensor / num_sensors_per_block);
+    size_t sensor_rp = sensor - block * num_sensors_per_block;
+    size_t fsb = block * num_sensors_per_block;
+
     if (lag < bin_size)
         return correlation[block * num_sensors_per_block * num_bins * bin_size + sensor_rp * bin_size + lag];
-    
-    int bin = std::ceil((double)(lag - bin_size + 1) / (double)(bin_size/2));
-    int channel = (lag - bin_size) - (bin_size/2) * (bin-1) + (bin_size/2);
 
-    return correlation[block * num_sensors_per_block * num_bins * bin_size + sensor_rp * bin_size  +  bin * num_sensors_per_block * bin_size + channel];
+    size_t n_spb_adj = (fsb + num_sensors_per_block >= num_sensors) ? (num_sensors - fsb) : num_sensors_per_block;   
+    size_t bin = std::ceil((double)(lag - bin_size + 1) / (double)(bin_size/2));
+    size_t channel = (lag - bin_size) - (bin_size/2) * (bin-1) + (bin_size/2);
+    
+    return correlation[block * num_sensors_per_block * num_bins * bin_size + sensor_rp * bin_size  +  bin * n_spb_adj * bin_size + channel];
 };
 
 template <typename T>

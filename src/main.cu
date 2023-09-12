@@ -57,11 +57,12 @@ int main (int argc, char* argv[]){
 			output_file << std::endl;
 		}
 
+        // size_t sensor_offset = 523776;
         // for (size_t bin = 0 ; bin < options.num_bins; ++bin) {
-            // for(size_t channel = 0; channel < options.bin_size ; ++channel) {
-                // output_file << "," << correlator.correlation[bin * 8 * options.bin_size + channel] ;
-            // }
-            // output_file << std::endl;
+        //     for(size_t channel = 0; channel < options.bin_size * 2 ; ++channel) {
+        //         output_file << "," << correlator.correlation[sensor_offset + bin * 1 * options.bin_size * 2 + channel] ;
+        //     }
+        //     output_file << std::endl;
         // }
 
 		output_file.close();

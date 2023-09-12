@@ -77,7 +77,7 @@ namespace utils {
         std::vector<uint16_t> taus;
         size_t maxLag = std::pow(m, num_bins - 1) * (bin_size/2) + bin_size;
         
-        for (size_t i = 0; i < bin_size; ++i){
+        for (size_t i = 0; i < bin_size * 2; ++i){
             if (i > full_time_len){
                     return taus;
             }
@@ -85,7 +85,7 @@ namespace utils {
         }
 
         for (size_t i = 1; i < num_bins; ++i) {
-            for(size_t j = (bin_size/2); j < bin_size; ++j){               
+            for(size_t j = (bin_size); j < bin_size * 2; ++j){               
 
                 size_t p = std::pow((double)m,i);
                 size_t tau = j * p;
