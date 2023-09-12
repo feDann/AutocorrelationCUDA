@@ -47,11 +47,10 @@
 // Kernels
 template <typename T>
 __global__ void 
-MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_processed, T * shift_register, int * shift_positions, T * accumulators, int * num_accumulators, T * correlation, const size_t num_bins){
+MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_processed, T * shift_register, int * shift_positions, T * accumulators, int * num_accumulators, T * correlation, const size_t num_bins, const size_t num_sensors){
 
     size_t num_sensors_per_block = blockDim.y;
     size_t bin_size = blockDim.x;
-    size_t num_sensors = gridDim.x * num_sensors_per_block;
 
     size_t sensor = threadIdx.y;  // relative sensor id inside the block -> 0..num_sensors_per_block
     size_t channel = threadIdx.x; // channels goes from 0..bin_size
@@ -68,76 +67,79 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
     T * block_correlation = &block_shift[num_sensors_per_block * num_bins * bin_size];
     T * block_accumulators = &block_correlation[num_sensors_per_block * num_bins * bin_size];
 
+    
+    if ( sensor_gp < num_sensors ) {
 
-    // Copy correlator arrays from global memory to shared memory
-    for (size_t bin = 0; bin < num_bins; ++bin) {
-        block_shift[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)] =  shift_register[GLOBAL_OFF(sensor, bin, channel, bin_size, num_sensors_per_block, num_bins, first_block_sensor)];
-        block_correlation[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)] =  correlation[GLOBAL_OFF(sensor, bin, channel, bin_size, num_sensors_per_block, num_bins, first_block_sensor)];
-    }
-
-    if (channel < num_bins) {  // full threads are not required anymore, for each sensor we need to copy only num_bins accumulator, num_accumulator and shift_positions; the name channel migh be misleading here, consider it as "bin" for the next lines 
-        block_num_accumulators[SHARED_OFF_B(sensor, channel, num_sensors_per_block)] = num_accumulators[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)];
-        block_accumulators[SHARED_OFF_B(sensor, channel, num_sensors_per_block)] = accumulators[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)];
-        block_shift_pos[SHARED_OFF_B(sensor, channel, num_sensors_per_block)] = shift_positions[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)];
-    }  
-
-    __syncthreads();
-
-    // Add new point of the series to the correlator
-    for (unsigned int instant = 0; instant < timepoints ; ++instant) {
-
-        int insert_channel_fb = block_shift_pos[SHARED_OFF_B(sensor, 0, num_sensors_per_block)]; // fb stands for first bin
-        T new_value = new_values[instant * num_sensors + sensor_gp];
-        
-        if (channel == 0) { // only one thread add the new_value to the sensor shift register
-            block_shift[SHARED_OFF(sensor, 0, insert_channel_fb, bin_size, num_sensors_per_block)] = new_value;
-            block_accumulators[SHARED_OFF_B(sensor, 0, num_sensors_per_block)] += new_value;
-            block_num_accumulators[SHARED_OFF_B(sensor, 0, num_sensors_per_block)] += 1;
+        // Copy correlator arrays from global memory to shared memory
+        for (size_t bin = 0; bin < num_bins; ++bin) {
+            block_shift[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)] =  shift_register[GLOBAL_OFF(sensor, bin, channel, bin_size, num_sensors_per_block, num_bins, first_block_sensor)];
+            block_correlation[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)] =  correlation[GLOBAL_OFF(sensor, bin, channel, bin_size, num_sensors_per_block, num_bins, first_block_sensor)];
         }
 
+        if (channel < num_bins) {  // full threads are not required anymore, for each sensor we need to copy only num_bins accumulator, num_accumulator and shift_positions; the name channel migh be misleading here, consider it as "bin" for the next lines 
+            block_num_accumulators[SHARED_OFF_B(sensor, channel, num_sensors_per_block)] = num_accumulators[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)];
+            block_accumulators[SHARED_OFF_B(sensor, channel, num_sensors_per_block)] = accumulators[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)];
+            block_shift_pos[SHARED_OFF_B(sensor, channel, num_sensors_per_block)] = shift_positions[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)];
+        }  
+
         __syncthreads();
 
-        block_correlation[SHARED_OFF(sensor, 0, channel, bin_size, num_sensors_per_block)] +=  block_shift[SHARED_OFF(sensor, 0, insert_channel_fb, bin_size, num_sensors_per_block)] * block_shift[SHARED_OFF(sensor, 0, (insert_channel_fb - channel + bin_size) & ( bin_size - 1 ), bin_size, num_sensors_per_block)];
-        block_shift_pos[SHARED_OFF_B(sensor, 0, num_sensors_per_block)] = (insert_channel_fb + 1) & (bin_size-1);
-        
-        __syncthreads();
-        
-        for(unsigned int bin = 1; bin < num_bins && block_num_accumulators[SHARED_OFF_B(sensor, bin - 1, num_sensors_per_block)] == M  ; ++bin) {
-            __syncthreads();
+        // Add new point of the series to the correlator
+        for (unsigned int instant = 0; instant < timepoints ; ++instant) {
 
-            int insert_channel = block_shift_pos[SHARED_OFF_B(sensor, bin, num_sensors_per_block)];
+            int insert_channel_fb = block_shift_pos[SHARED_OFF_B(sensor, 0, num_sensors_per_block)]; // fb stands for first bin
+            T new_value = new_values[instant * num_sensors + sensor_gp];
             
             if (channel == 0) { // only one thread add the new_value to the sensor shift register
-                block_shift[SHARED_OFF(sensor, bin, insert_channel, bin_size, num_sensors_per_block)] = block_accumulators[SHARED_OFF_B(sensor, bin-1, num_sensors_per_block)];
-                block_accumulators[SHARED_OFF_B(sensor, bin, num_sensors_per_block)] += block_accumulators[SHARED_OFF_B(sensor, bin-1, num_sensors_per_block)];
-                block_num_accumulators[SHARED_OFF_B(sensor, bin, num_sensors_per_block)] += 1;
+                block_shift[SHARED_OFF(sensor, 0, insert_channel_fb, bin_size, num_sensors_per_block)] = new_value;
+                block_accumulators[SHARED_OFF_B(sensor, 0, num_sensors_per_block)] += new_value;
+                block_num_accumulators[SHARED_OFF_B(sensor, 0, num_sensors_per_block)] += 1;
             }
+
             __syncthreads();
 
-            block_accumulators[SHARED_OFF_B(sensor, bin-1, num_sensors_per_block)] = 0;
-            block_num_accumulators[SHARED_OFF_B(sensor, bin-1, num_sensors_per_block)] = 0;
+            block_correlation[SHARED_OFF(sensor, 0, channel, bin_size, num_sensors_per_block)] +=  block_shift[SHARED_OFF(sensor, 0, insert_channel_fb, bin_size, num_sensors_per_block)] * block_shift[SHARED_OFF(sensor, 0, (insert_channel_fb - channel + bin_size) & ( bin_size - 1 ), bin_size, num_sensors_per_block)];
+            block_shift_pos[SHARED_OFF_B(sensor, 0, num_sensors_per_block)] = (insert_channel_fb + 1) & (bin_size-1);
+            
+            __syncthreads();
+            
+            for(unsigned int bin = 1; bin < num_bins && block_num_accumulators[SHARED_OFF_B(sensor, bin - 1, num_sensors_per_block)] == M  ; ++bin) {
+                __syncthreads();
 
-            if (channel >= bin_size/M) {
-                block_correlation[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)] +=  block_shift[SHARED_OFF(sensor, bin, insert_channel, bin_size, num_sensors_per_block)] * block_shift[SHARED_OFF(sensor, bin, (insert_channel - channel + bin_size) & (bin_size -1), bin_size, num_sensors_per_block)];
+                int insert_channel = block_shift_pos[SHARED_OFF_B(sensor, bin, num_sensors_per_block)];
+                
+                if (channel == 0) { // only one thread add the new_value to the sensor shift register
+                    block_shift[SHARED_OFF(sensor, bin, insert_channel, bin_size, num_sensors_per_block)] = block_accumulators[SHARED_OFF_B(sensor, bin-1, num_sensors_per_block)];
+                    block_accumulators[SHARED_OFF_B(sensor, bin, num_sensors_per_block)] += block_accumulators[SHARED_OFF_B(sensor, bin-1, num_sensors_per_block)];
+                    block_num_accumulators[SHARED_OFF_B(sensor, bin, num_sensors_per_block)] += 1;
+                }
+                __syncthreads();
+
+                block_accumulators[SHARED_OFF_B(sensor, bin-1, num_sensors_per_block)] = 0;
+                block_num_accumulators[SHARED_OFF_B(sensor, bin-1, num_sensors_per_block)] = 0;
+
+                if (channel >= bin_size/M) {
+                    block_correlation[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)] +=  block_shift[SHARED_OFF(sensor, bin, insert_channel, bin_size, num_sensors_per_block)] * block_shift[SHARED_OFF(sensor, bin, (insert_channel - channel + bin_size) & (bin_size -1), bin_size, num_sensors_per_block)];
+                }
+                block_shift_pos[SHARED_OFF_B(sensor, bin, num_sensors_per_block)] = (insert_channel + 1) & (bin_size-1);
+
             }
-            block_shift_pos[SHARED_OFF_B(sensor, bin, num_sensors_per_block)] = (insert_channel + 1) & (bin_size-1);
+
+            __syncthreads();
 
         }
+        
+        // Copy correlator arrays from global memory to shared memory
+        for (size_t bin = 0; bin < num_bins; ++bin) {
+            shift_register[GLOBAL_OFF(sensor, bin, channel, bin_size, num_sensors_per_block, num_bins, first_block_sensor)] = block_shift[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)];
+            correlation[GLOBAL_OFF(sensor, bin, channel, bin_size, num_sensors_per_block, num_bins, first_block_sensor)] = block_correlation[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)];
+        }
 
-        __syncthreads();
-
-    }
-    
-    // Copy correlator arrays from global memory to shared memory
-    for (size_t bin = 0; bin < num_bins; ++bin) {
-        shift_register[GLOBAL_OFF(sensor, bin, channel, bin_size, num_sensors_per_block, num_bins, first_block_sensor)] = block_shift[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)];
-        correlation[GLOBAL_OFF(sensor, bin, channel, bin_size, num_sensors_per_block, num_bins, first_block_sensor)] = block_correlation[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)];
-    }
-
-    if (channel < num_bins) {  // full threads are not required anymore, for each sensor we need to copy only num_bins accumulator, num_accumulator and shift_positions; the name channel migh be misleading here, consider it as "bin" for the next lines 
-        num_accumulators[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)] = block_num_accumulators[SHARED_OFF_B(sensor, channel, num_sensors_per_block)];
-        accumulators[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)] = block_accumulators[SHARED_OFF_B(sensor, channel, num_sensors_per_block)];
-        shift_positions[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)] = block_shift_pos[SHARED_OFF_B(sensor, channel, num_sensors_per_block)];
+        if (channel < num_bins) {  // full threads are not required anymore, for each sensor we need to copy only num_bins accumulator, num_accumulator and shift_positions; the name channel migh be misleading here, consider it as "bin" for the next lines 
+            num_accumulators[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)] = block_num_accumulators[SHARED_OFF_B(sensor, channel, num_sensors_per_block)];
+            accumulators[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)] = block_accumulators[SHARED_OFF_B(sensor, channel, num_sensors_per_block)];
+            shift_positions[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)] = block_shift_pos[SHARED_OFF_B(sensor, channel, num_sensors_per_block)];
+        }   
     }
 
 };
@@ -161,17 +163,11 @@ Correlator<T>::Correlator(size_t t_num_bins, size_t t_bin_size, size_t t_num_sen
 
     //                        accumulators    shift_registers and outputs          accumulator and num_accumulator 
     shared_memory_per_block = (num_bins + 2 * (num_bins * bin_size) ) * sizeof(T) + 2 * (num_bins) * sizeof(int);
-    num_sensors_per_block = std::floor((double) device_properties.sharedMemPerBlock / shared_memory_per_block);
+    num_sensors_per_block = std::floor((double) (device_properties.sharedMemPerBlock) / shared_memory_per_block);
 
     shared_memory_per_block *= num_sensors_per_block;
 
-    assert(shared_memory_per_block <= device_properties.sharedMemPerBlock && num_sensors_per_block > 0 && "ERROR: current configuration exceed device shared memory limits");
-
-    if (num_sensors_per_block <= MIN_SENSORS_PER_BOOCK && debug) {
-        std::cout << "[WARNING] num_sensors_per_block is low, consider changing the current configuration of bin_size and num_bins" << std::endl;
-    }
-
-    number_of_blocks = dim3(num_sensors / num_sensors_per_block, 1 , 1);
+    number_of_blocks = dim3(std::ceil((double) num_sensors / num_sensors_per_block), 1 , 1);
     threads_per_block = dim3(bin_size, num_sensors_per_block, 1);
 
     if (debug){
@@ -185,6 +181,12 @@ Correlator<T>::Correlator(size_t t_num_bins, size_t t_bin_size, size_t t_num_sen
         std::cout << "[INFO] Maximum shared memory available: " << device_properties.sharedMemPerBlock << " B" << std::endl;
         std::cout << "[INFO] Number of blocks: (" << number_of_blocks.x << "," << number_of_blocks.y << "," << number_of_blocks.z << ")" << std::endl;
         std::cout << "[INFO] Threads per blocks: (" << threads_per_block.x << "," << threads_per_block.y << "," << threads_per_block.z << ")" << std::endl;
+    }
+    
+    assert(shared_memory_per_block <= device_properties.sharedMemPerBlock && num_sensors_per_block > 0 && "ERROR: current configuration exceed device shared memory limits");
+
+    if (num_sensors_per_block <= MIN_SENSORS_PER_BOOCK && debug) {
+        std::cout << "[WARNING] num_sensors_per_block is low, consider changing the current configuration of bin_size and num_bins" << std::endl;
     }    
 };
 
@@ -262,7 +264,7 @@ void Correlator<T>::correlate(T * new_values, size_t timepoints){
 
     if (debug) std::cout << "[INFO] Starting correlation" << std::endl;
 
-    MultiTau::correlate<T><<<number_of_blocks, threads_per_block, shared_memory_per_block>>>(d_new_values, timepoints, instants_processed, d_shift_register, d_shift_positions, d_accumulators, d_num_accumulators, d_correlation, num_bins);
+    MultiTau::correlate<T><<<number_of_blocks, threads_per_block, shared_memory_per_block>>>(d_new_values, timepoints, instants_processed, d_shift_register, d_shift_positions, d_accumulators, d_num_accumulators, d_correlation, num_bins, num_sensors);
     cudaDeviceSynchronize();
     CHECK_KERNELCALL();
     

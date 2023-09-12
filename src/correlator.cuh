@@ -9,7 +9,17 @@ namespace MultiTau {
 
     template <typename T>
     __global__ void 
-    correlate (T * new_values, const size_t timepoints, size_t instants_processed, T * shift_register, int * shift_positions, T * accumulators, int * num_accumulators, T * correlation,  const size_t num_bins);
+    correlate ( T * new_values, 
+                const size_t timepoints, 
+                size_t instants_processed, 
+                T * shift_register, 
+                int * shift_positions, 
+                T * accumulators, 
+                int * num_accumulators, 
+                T * correlation,  
+                const size_t num_bins,
+                const size_t num_sensors
+                );
 
 }
 
