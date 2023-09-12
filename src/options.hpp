@@ -12,7 +12,6 @@
 #define NUM_BINS 10
 #define BIN_SIZE 32
 #define NUM_SENSORS 1024
-#define NUM_SENSORS_PER_BLOCK 8
 
 
 struct Options {
@@ -23,7 +22,6 @@ struct Options {
     size_t num_bins = NUM_BINS;
     size_t bin_size = BIN_SIZE;
     size_t num_sensors = NUM_SENSORS;
-    size_t num_sensors_per_block = NUM_SENSORS_PER_BLOCK;
 
     bool results = false;
     bool parse_file = PARSE_FILE;
