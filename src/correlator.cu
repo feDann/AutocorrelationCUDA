@@ -77,13 +77,18 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
         for (size_t bin = 0; bin < num_bins; ++bin) {
             block_shift[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)] =  shift_register[GLOBAL_OFF(sensor, bin, channel, bin_size, num_sensors_per_block, num_bins, first_block_sensor)];
             block_correlation[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)] =  correlation[GLOBAL_OFF(sensor, bin, channel, bin_size, num_sensors_per_block, num_bins, first_block_sensor)];
+
+            block_num_accumulators[SHARED_OFF_B(sensor, bin, num_sensors_per_block)] = num_accumulators[GLOBAL_OFF_B(sensor, bin, num_sensors_per_block, num_bins, first_block_sensor)];
+            block_accumulators[SHARED_OFF_B(sensor, bin, num_sensors_per_block)] = accumulators[GLOBAL_OFF_B(sensor, bin, num_sensors_per_block, num_bins, first_block_sensor)];
+            block_shift_pos[SHARED_OFF_B(sensor, bin, num_sensors_per_block)] = shift_positions[GLOBAL_OFF_B(sensor, bin, num_sensors_per_block, num_bins, first_block_sensor)];
+
         }
 
-        if (channel < num_bins) {  // full threads are not required anymore, for each sensor we need to copy only num_bins accumulator, num_accumulator and shift_positions; the name channel migh be misleading here, consider it as "bin" for the next lines 
-            block_num_accumulators[SHARED_OFF_B(sensor, channel, num_sensors_per_block)] = num_accumulators[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)];
-            block_accumulators[SHARED_OFF_B(sensor, channel, num_sensors_per_block)] = accumulators[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)];
-            block_shift_pos[SHARED_OFF_B(sensor, channel, num_sensors_per_block)] = shift_positions[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)];
-        }  
+        // if (channel < num_bins) {  // full threads are not required anymore, for each sensor we need to copy only num_bins accumulator, num_accumulator and shift_positions; the name channel migh be misleading here, consider it as "bin" for the next lines 
+        //     block_num_accumulators[SHARED_OFF_B(sensor, channel, num_sensors_per_block)] = num_accumulators[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)];
+        //     block_accumulators[SHARED_OFF_B(sensor, channel, num_sensors_per_block)] = accumulators[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)];
+        //     block_shift_pos[SHARED_OFF_B(sensor, channel, num_sensors_per_block)] = shift_positions[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)];
+        // }  
 
         __syncthreads();
 
@@ -136,13 +141,18 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
         for (size_t bin = 0; bin < num_bins; ++bin) {
             shift_register[GLOBAL_OFF(sensor, bin, channel, bin_size, num_sensors_per_block, num_bins, first_block_sensor)] = block_shift[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)];
             correlation[GLOBAL_OFF(sensor, bin, channel, bin_size, num_sensors_per_block, num_bins, first_block_sensor)] = block_correlation[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)];
+
+            num_accumulators[GLOBAL_OFF_B(sensor, bin, num_sensors_per_block, num_bins, first_block_sensor)] = block_num_accumulators[SHARED_OFF_B(sensor, bin, num_sensors_per_block)];
+            accumulators[GLOBAL_OFF_B(sensor, bin, num_sensors_per_block, num_bins, first_block_sensor)] = block_accumulators[SHARED_OFF_B(sensor, bin, num_sensors_per_block)];
+            shift_positions[GLOBAL_OFF_B(sensor, bin, num_sensors_per_block, num_bins, first_block_sensor)] = block_shift_pos[SHARED_OFF_B(sensor, bin, num_sensors_per_block)];
+
         }
 
-        if (channel < num_bins) {  // full threads are not required anymore, for each sensor we need to copy only num_bins accumulator, num_accumulator and shift_positions; the name channel migh be misleading here, consider it as "bin" for the next lines 
-            num_accumulators[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)] = block_num_accumulators[SHARED_OFF_B(sensor, channel, num_sensors_per_block)];
-            accumulators[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)] = block_accumulators[SHARED_OFF_B(sensor, channel, num_sensors_per_block)];
-            shift_positions[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)] = block_shift_pos[SHARED_OFF_B(sensor, channel, num_sensors_per_block)];
-        }   
+        // if (channel < num_bins) {  // full threads are not required anymore, for each sensor we need to copy only num_bins accumulator, num_accumulator and shift_positions; the name channel migh be misleading here, consider it as "bin" for the next lines 
+        //     num_accumulators[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)] = block_num_accumulators[SHARED_OFF_B(sensor, channel, num_sensors_per_block)];
+        //     accumulators[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)] = block_accumulators[SHARED_OFF_B(sensor, channel, num_sensors_per_block)];
+        //     shift_positions[GLOBAL_OFF_B(sensor, channel, num_sensors_per_block, num_bins, first_block_sensor)] = block_shift_pos[SHARED_OFF_B(sensor, channel, num_sensors_per_block)];
+        // }   
     }
 
 };
@@ -164,9 +174,11 @@ Correlator<T>::Correlator(size_t t_num_bins, size_t t_bin_size, size_t t_num_sen
     max_tau = bin_size * std::pow(2, num_bins);
     num_taus = bin_size * num_bins;
 
+    size_t max_shared_mem_per_block = device_properties.sharedMemPerBlock;
+
     //                        accumulators    shift_registers and outputs          accumulator and num_accumulator 
     shared_memory_per_block = (num_bins + 2 * (num_bins * bin_size) ) * sizeof(T) + 2 * (num_bins) * sizeof(int);
-    num_sensors_per_block = std::floor((double) (device_properties.sharedMemPerBlock) / shared_memory_per_block);
+    num_sensors_per_block = std::max(std::floor((double) max_shared_mem_per_block / shared_memory_per_block), (double) 1);
 
     shared_memory_per_block *= num_sensors_per_block;
 
@@ -180,15 +192,22 @@ Correlator<T>::Correlator(size_t t_num_bins, size_t t_bin_size, size_t t_num_sen
         std::cout << "[INFO] Number of sensors per block: " << num_sensors_per_block << std::endl;
         std::cout << "[INFO] Max tau possible: " << max_tau << std::endl;
         std::cout << "[INFO] Number of taus possible: " << num_taus << std::endl;
-        std::cout << "[INFO] Shared Memory per block: " << shared_memory_per_block << " B" << std::endl;
-        std::cout << "[INFO] Maximum shared memory available: " << device_properties.sharedMemPerBlock << " B" << std::endl;
+        std::cout << "[INFO] --------------------------------------" << std::endl;
         std::cout << "[INFO] Number of blocks: (" << number_of_blocks.x << "," << number_of_blocks.y << "," << number_of_blocks.z << ")" << std::endl;
         std::cout << "[INFO] Threads per blocks: (" << threads_per_block.x << "," << threads_per_block.y << "," << threads_per_block.z << ")" << std::endl;
+        std::cout << "[INFO] Maximum shared memory per multi processor: " << device_properties.sharedMemPerMultiprocessor  << " B" << std::endl;
+        std::cout << "[INFO] Number of available multi processors: " << device_properties.multiProcessorCount  << std::endl;
+        std::cout << "[INFO] Maximum shared memory used per Block: " << max_shared_mem_per_block << " B" << std::endl;
+        std::cout << "[INFO] Shared Memory per block: " << shared_memory_per_block << " B" << std::endl;
+        std::cout << "[INFO] --------------------------------------" << std::endl;
+
     }
     
-    assert(shared_memory_per_block <= device_properties.sharedMemPerBlock && num_sensors_per_block > 0 && "ERROR: current configuration exceed device shared memory limits");
+    assert(shared_memory_per_block <= max_shared_mem_per_block && "ERROR: current configuration exceed device shared memory limits");
+    assert(threads_per_block.x * threads_per_block.y < device_properties.maxThreadsPerBlock && "ERROR: current configuration exceed device max num thread per block");
+    assert(number_of_blocks.x < device_properties.maxGridSize[0] && "ERROR: current configuration exceed device max number of blocks");
 
-    if (num_sensors_per_block <= MIN_SENSORS_PER_BOOCK && debug) {
+    if (debug && num_sensors_per_block <= MIN_SENSORS_PER_BOOCK ) {
         std::cout << "[WARNING] num_sensors_per_block is low, consider changing the current configuration of bin_size and num_bins" << std::endl;
     }    
 };
