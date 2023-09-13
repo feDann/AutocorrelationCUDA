@@ -28,7 +28,7 @@ for TIMEPOINT in $TIMEPOINTS; do
                 echo "Folder created: $CONFIG_OUTPUT"
             fi
 
-            echo "Running current config: -l $level -g $group for $TIMEPOINT timepoints"
+            echo "    Running current config: -l $level -g $group for $TIMEPOINT timepoints"
 
             nvidia-smi $NVIDIA_SMI_ARGS -f "${CONFIG_OUTPUT}/${TIMEPOINT}-utilization.csv" & pid2=$!
             ./bin/main $AUTOCORR_ARGS -i "${INPUT_FOLDER}/${TIMEPOINT}.csv"  -l "${level}" -g "${group}" -o "${CONFIG_OUTPUT}/${TIMEPOINT}.csv" > "${CONFIG_OUTPUT}/${TIMEPOINT}" & pid1=$!
