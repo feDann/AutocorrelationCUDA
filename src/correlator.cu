@@ -118,12 +118,10 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
             block_correlation[SHARED_OFF(sensor, 0, channel, bin_size, num_sensors_per_block)] +=  block_shift[SHARED_OFF(sensor, 0, insert_channel_fb, bin_size, num_sensors_per_block)] * block_shift[SHARED_OFF(sensor, 0, (insert_channel_fb - channel + bin_size) & ( bin_size - 1 ), bin_size, num_sensors_per_block)];
             block_shift_pos[SHARED_OFF_B(sensor, 0, num_sensors_per_block)] = (insert_channel_fb + 1) & (bin_size-1);
             
-            __syncthreads();
 
             size_t max_bin = std::min(insert_until_bin(instants_processed), num_bins);
             
             for(unsigned int bin = 1; bin < max_bin ; ++bin) {
-                __syncthreads();
 
                 int insert_channel = block_shift_pos[SHARED_OFF_B(sensor, bin, num_sensors_per_block)];
                 
@@ -141,7 +139,6 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
                 block_shift_pos[SHARED_OFF_B(sensor, bin, num_sensors_per_block)] = (insert_channel + 1) & (bin_size-1);
 
             }
-            __syncthreads();
 
         }
         
