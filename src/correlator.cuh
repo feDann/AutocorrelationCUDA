@@ -19,7 +19,6 @@ namespace MultiTau {
                 T * shift_register, 
                 int * shift_positions, 
                 T * accumulators, 
-                // int * num_accumulators, 
                 T * correlation,  
                 const size_t num_bins,
                 const size_t num_sensors
@@ -31,13 +30,13 @@ template<typename T>
 class Correlator {
 
     public:
-        Correlator(size_t num_bins, size_t bin_size, size_t num_sensors, int device = 0, bool debug = false);
+        Correlator(const size_t num_bins, const size_t bin_size, const size_t num_sensors, const size_t packet_size, const int device = 0, const bool debug = false);
         ~Correlator();
 
         void alloc();
-        void correlate(T * new_values, size_t timepoints);
+        void correlate(const T * new_values, const size_t timepoints);
         void transfer();
-        T get(size_t sensor, size_t lag);
+        T get(const size_t sensor, const size_t lag);
         void reset();
 
     private:
@@ -48,6 +47,7 @@ class Correlator {
         size_t bin_size;
         size_t num_sensors;
         size_t num_sensors_per_block;
+        size_t packet_size;
 
         size_t shared_memory_per_block;
 
@@ -67,7 +67,6 @@ class Correlator {
         int * d_shift_positions = nullptr;
 
         T * d_accumulators = nullptr;
-        // int * d_num_accumulators = nullptr;
 
         T * d_correlation = nullptr;
         T * d_new_values = nullptr;
