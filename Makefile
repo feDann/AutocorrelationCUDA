@@ -1,6 +1,6 @@
 CXX=nvcc
 
-CUDAFLAGS=--ptxas-options=-v -O4 -m64 -arch compute_61 -code sm_61 -Xptxas -dlcm=ca -Xcompiler -D_FORCE_INLINES -lineinfo
+CUDAFLAGS=--ptxas-options=-v -m64 -arch compute_61 -code sm_61 -Xptxas -dlcm=ca -Xcompiler -D_FORCE_INLINES -lineinfo --expt-relaxed-constexpr
 
 BIN_FOLDER=bin
 SRC_FOLDER=src
@@ -14,7 +14,7 @@ clean:
 
 release:
 	mkdir -p $(BIN_FOLDER)
-	$(CXX) $(FILES) $(CUDAFLAGS) -o $(BIN_FOLDER)/main
+	$(CXX) $(FILES) $(CUDAFLAGS) -O3 -o $(BIN_FOLDER)/main
 
 debug:
 	mkdir -p $(BIN_FOLDER)

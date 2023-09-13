@@ -7,6 +7,10 @@
 #define MIN_SENSORS_PER_BOOCK 4
 namespace MultiTau {
 
+
+    __inline__ __device__ size_t
+    insert_until_bin(size_t instants);
+
     template <typename T>
     __global__ void 
     correlate ( T * new_values, 
@@ -15,7 +19,7 @@ namespace MultiTau {
                 T * shift_register, 
                 int * shift_positions, 
                 T * accumulators, 
-                int * num_accumulators, 
+                // int * num_accumulators, 
                 T * correlation,  
                 const size_t num_bins,
                 const size_t num_sensors
@@ -63,7 +67,7 @@ class Correlator {
         int * d_shift_positions = nullptr;
 
         T * d_accumulators = nullptr;
-        int * d_num_accumulators = nullptr;
+        // int * d_num_accumulators = nullptr;
 
         T * d_correlation = nullptr;
         T * d_new_values = nullptr;

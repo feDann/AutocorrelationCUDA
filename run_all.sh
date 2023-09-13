@@ -6,7 +6,7 @@ TIMEPOINTS="100 1000 2048 10000 30000"
 
 NVIDIA_SMI_ARGS="-lms 1 --format=csv --query-gpu=timestamp,power.draw,utilization.gpu,utilization.memory,memory.total,memory.free,memory.used"
 OUTPUT_FOLDER="output"
-INPUT_FOLDER="../../thesis/input"
+INPUT_FOLDER="../thesis/input"
 
 
 LEVELS_CONFIG="8 10 16"
