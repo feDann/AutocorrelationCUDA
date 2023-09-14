@@ -46,11 +46,11 @@
 
 // Kernels
 
-__inline__ __device__ size_t
-MultiTau::insert_until_bin(const size_t instant, const size_t num_bins){
-    size_t mask = 1;
+__inline__ __device__ int
+MultiTau::insert_until_bin(const int instant, const int num_bins){
+    int mask = 1;
 
-    for (size_t i = 0; i < num_bins; ++i) {
+    for (int i = 0; i < num_bins; ++i) {
         if ((instant & mask) != 0){
             return i + 1;
         }
@@ -61,16 +61,16 @@ MultiTau::insert_until_bin(const size_t instant, const size_t num_bins){
 
 template <typename T>
 __global__ void 
-MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_processed, T * shift_register, int * shift_positions, T * accumulators, T * correlation, const size_t num_bins, const size_t num_sensors){
+MultiTau::correlate<T>(T * new_values, const int timepoints, int instants_processed, T * shift_register, int * shift_positions, T * accumulators, T * correlation, const int num_bins, const int num_sensors){
 
-    size_t num_sensors_per_block = blockDim.y;
-    size_t bin_size = blockDim.x;
+    int num_sensors_per_block = blockDim.y;
+    int bin_size = blockDim.x;
 
-    size_t sensor = threadIdx.y;  // relative sensor id inside the block -> 0..num_sensors_per_block
-    size_t channel = threadIdx.x; // channels goes from 0..bin_size
+    int sensor = threadIdx.y;  // relative sensor id inside the block -> 0..num_sensors_per_block
+    int channel = threadIdx.x; // channels goes from 0..bin_size
 
-    size_t first_block_sensor = blockIdx.x * num_sensors_per_block; // id for the first sensor of the block
-    size_t sensor_gp = first_block_sensor + sensor; // gp stands for global-position, this is the global sensor id
+    int first_block_sensor = blockIdx.x * num_sensors_per_block; // id for the first sensor of the block
+    int sensor_gp = first_block_sensor + sensor; // gp stands for global-position, this is the global sensor id
 
     // Due to templates memory needs to be assigned as unsigned char 
     extern __shared__  unsigned char total_shared_memory[];
@@ -87,7 +87,7 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
     if ( sensor_gp < num_sensors ) {
 
         // Copy correlator arrays from global memory to shared memory
-        for (size_t bin = 0; bin < num_bins; ++bin) {
+        for (int bin = 0; bin < num_bins; ++bin) {
             block_shift[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)] =  shift_register[GLOBAL_OFF(sensor, bin, channel, bin_size, num_sensors_per_block, num_bins, first_block_sensor)];
             block_correlation[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)] =  correlation[GLOBAL_OFF(sensor, bin, channel, bin_size, num_sensors_per_block, num_bins, first_block_sensor)];
 
@@ -100,7 +100,7 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
         __syncthreads();
 
         // Add new point of the series to the correlator
-        for (unsigned int instant = 0; instant < timepoints ; ++instant) {
+        for (int instant = 0; instant < timepoints ; ++instant) {
             ++instants_processed;
 
             int insert_channel_fb = block_shift_pos[SHARED_OFF_B(sensor, 0, num_sensors_per_block)]; // fb stands for first bin
@@ -119,7 +119,7 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
 
             size_t max_bin = insert_until_bin(instants_processed, num_bins);
             
-            for(unsigned int bin = 1; bin < max_bin ; ++bin) {
+            for(int bin = 1; bin < max_bin ; ++bin) {
 
                 int insert_channel = block_shift_pos[SHARED_OFF_B(sensor, bin, num_sensors_per_block)];
                 
@@ -131,9 +131,7 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
 
                 block_accumulators[SHARED_OFF_B(sensor, bin-1, num_sensors_per_block)] = 0;
 
-                if (channel >= bin_size/M) {
-                    block_correlation[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)] +=  block_shift[SHARED_OFF(sensor, bin, insert_channel, bin_size, num_sensors_per_block)] * block_shift[SHARED_OFF(sensor, bin, (insert_channel - channel + bin_size) & (bin_size -1), bin_size, num_sensors_per_block)];
-                }
+                block_correlation[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)] +=  block_shift[SHARED_OFF(sensor, bin, insert_channel, bin_size, num_sensors_per_block)] * block_shift[SHARED_OFF(sensor, bin, (insert_channel - channel + bin_size) & (bin_size -1), bin_size, num_sensors_per_block)] * (channel - bin_size/M >= 0); // only half of the channel needs to be computed, the last member of the multiplication is used to remove garbage fromunused channels
                 block_shift_pos[SHARED_OFF_B(sensor, bin, num_sensors_per_block)] = (insert_channel + 1) & (bin_size-1);
 
             }
@@ -155,7 +153,7 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
 
 
 template <typename T>
-Correlator<T>::Correlator(const size_t t_num_bins, const size_t t_bin_size, const size_t t_num_sensors, const size_t t_packet_size, const int t_device, const bool t_debug){    
+Correlator<T>::Correlator(const int t_num_bins, const int t_bin_size, const int t_num_sensors, const int t_packet_size, const int t_device, const bool t_debug){    
     cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
     cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
 
@@ -171,8 +169,8 @@ Correlator<T>::Correlator(const size_t t_num_bins, const size_t t_bin_size, cons
     max_tau = bin_size * std::pow(2, num_bins);
     num_taus = bin_size * num_bins;
 
-    size_t max_shared_mem_per_block = std::floor((double)device_properties.sharedMemPerMultiprocessor / device_properties.multiProcessorCount);
-    // size_t max_shared_mem_per_block = device_properties.sharedMemPerBlock / 2;
+    int max_shared_mem_per_block = std::floor((double)device_properties.sharedMemPerMultiprocessor / device_properties.multiProcessorCount);
+    // int max_shared_mem_per_block = device_properties.sharedMemPerBlock / 2;
 
     //                        accumulators    shift_registers and outputs          accumulator 
     shared_memory_per_block = (num_bins + 2 * (num_bins * bin_size) ) * sizeof(T) + (num_bins) * sizeof(int);
@@ -277,7 +275,7 @@ void Correlator<T>::alloc(){
 };
 
 template <typename T>
-void Correlator<T>::correlate(const T * new_values, const size_t timepoints){
+void Correlator<T>::correlate(const T * new_values, const int timepoints){
 
     transfered = false;
 
@@ -311,19 +309,19 @@ void Correlator<T>::transfer(){
 
 
 template <typename T>
-T Correlator<T>::get(const size_t sensor, const size_t lag){
+T Correlator<T>::get(const int sensor, const int lag){
     assert(transfered && "ERROR: Data not transfered from device memory to host memory");
 
-    size_t block = std::floor((double) sensor / num_sensors_per_block);
-    size_t sensor_rp = sensor - block * num_sensors_per_block;
-    size_t fsb = block * num_sensors_per_block;
+    int block = std::floor((double) sensor / num_sensors_per_block);
+    int sensor_rp = sensor - block * num_sensors_per_block;
+    int fsb = block * num_sensors_per_block;
 
     if (lag < bin_size)
         return correlation[block * num_sensors_per_block * num_bins * bin_size + sensor_rp * bin_size + lag];
 
-    size_t n_spb_adj = (fsb + num_sensors_per_block >= num_sensors) ? (num_sensors - fsb) : num_sensors_per_block;   
-    size_t bin = std::ceil((double)(lag - bin_size + 1) / (double)(bin_size/2));
-    size_t channel = (lag - bin_size) - (bin_size/2) * (bin-1) + (bin_size/2);
+    int n_spb_adj = (fsb + num_sensors_per_block >= num_sensors) ? (num_sensors - fsb) : num_sensors_per_block;   
+    int bin = std::ceil((double)(lag - bin_size + 1) / (double)(bin_size/2));
+    int channel = (lag - bin_size) - (bin_size/2) * (bin-1) + (bin_size/2);
     
     return correlation[block * num_sensors_per_block * num_bins * bin_size + sensor_rp * bin_size  +  bin * n_spb_adj * bin_size + channel];
 };
