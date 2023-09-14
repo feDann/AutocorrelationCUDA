@@ -47,18 +47,16 @@
 // Kernels
 
 __inline__ __device__ size_t
-MultiTau::insert_until_bin(size_t instant){
-    size_t number_of_bits = sizeof(instant) * 8;
-
+MultiTau::insert_until_bin(const size_t instant, const size_t num_bins){
     size_t mask = 1;
 
-    for (size_t i = 0; i < number_of_bits; ++i) {
+    for (size_t i = 0; i < num_bins; ++i) {
         if ((instant & mask) != 0){
             return i + 1;
         }
         mask = mask << 1;
     }
-    return number_of_bits;
+    return num_bins;
 };
 
 template <typename T>
@@ -119,7 +117,7 @@ MultiTau::correlate<T>(T * new_values, const size_t timepoints, size_t instants_
             block_shift_pos[SHARED_OFF_B(sensor, 0, num_sensors_per_block)] = (insert_channel_fb + 1) & (bin_size-1);
             
 
-            size_t max_bin = std::min(insert_until_bin(instants_processed), num_bins);
+            size_t max_bin = insert_until_bin(instants_processed, num_bins);
             
             for(unsigned int bin = 1; bin < max_bin ; ++bin) {
 

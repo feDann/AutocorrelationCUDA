@@ -9,7 +9,7 @@ namespace MultiTau {
 
 
     __inline__ __device__ size_t
-    insert_until_bin(size_t instants);
+    insert_until_bin(const size_t instants, const size_t num_bins);
 
     template <typename T>
     __global__ void 
