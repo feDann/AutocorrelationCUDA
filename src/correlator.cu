@@ -169,11 +169,15 @@ Correlator<T>::Correlator(const int t_num_bins, const int t_bin_size, const int 
     max_tau = bin_size * std::pow(2, num_bins);
     num_taus = bin_size * num_bins;
 
-    int max_shared_mem_per_block = std::floor((double)device_properties.sharedMemPerMultiprocessor / device_properties.multiProcessorCount);
-    // int max_shared_mem_per_block = device_properties.sharedMemPerBlock / 2;
+    int max_shared_mem_per_block = std::floor((double)device_properties.sharedMemPerMultiprocessor / device_properties.multiProcessorCount); // Used to achieve maximum MP usage
 
-    //                        accumulators    shift_registers and outputs          accumulator 
-    shared_memory_per_block = (num_bins + 2 * (num_bins * bin_size) ) * sizeof(T) + (num_bins) * sizeof(int);
+    int accumulators_block_usage = num_bins * sizeof(T);
+    int shift_registers_block_usage = (num_bins * bin_size) * sizeof(T);
+    int correlations_block_usage = (num_bins * bin_size) * sizeof(T);
+    int shift_registers_pos_block_usage = num_bins * sizeof(int);
+
+    shared_memory_per_block = accumulators_block_usage + shift_registers_block_usage + correlations_block_usage + shift_registers_pos_block_usage;
+
     num_sensors_per_block = std::max(std::floor((double) max_shared_mem_per_block / shared_memory_per_block), (double) 1);
 
     shared_memory_per_block *= num_sensors_per_block;
@@ -182,6 +186,7 @@ Correlator<T>::Correlator(const int t_num_bins, const int t_bin_size, const int 
     threads_per_block = dim3(bin_size, num_sensors_per_block, 1);
 
     if (debug){
+        std::cout << "[INFO] --------------------------------------" << std::endl;
         std::cout << "[INFO] Number of bins: " << num_bins << std::endl;
         std::cout << "[INFO] Size of bins: " << bin_size << std::endl;
         std::cout << "[INFO] Number of sensors: " << num_sensors << std::endl;
@@ -192,10 +197,14 @@ Correlator<T>::Correlator(const int t_num_bins, const int t_bin_size, const int 
         std::cout << "[INFO] --------------------------------------" << std::endl;
         std::cout << "[INFO] Number of blocks: (" << number_of_blocks.x << "," << number_of_blocks.y << "," << number_of_blocks.z << ")" << std::endl;
         std::cout << "[INFO] Threads per blocks: (" << threads_per_block.x << "," << threads_per_block.y << "," << threads_per_block.z << ")" << std::endl;
-        std::cout << "[INFO] Maximum shared memory per multi processor: " << device_properties.sharedMemPerMultiprocessor  << " B" << std::endl;
+        std::cout << "[INFO] Shared memory available per multi processor: " << device_properties.sharedMemPerMultiprocessor  << " B" << std::endl;
         std::cout << "[INFO] Number of available multi processors: " << device_properties.multiProcessorCount  << std::endl;
-        std::cout << "[INFO] Maximum shared memory used per Block: " << max_shared_mem_per_block << " B" << std::endl;
-        std::cout << "[INFO] Shared Memory per block: " << shared_memory_per_block << " B" << std::endl;
+        std::cout << "[INFO] Maximum shared memory available per block: " << max_shared_mem_per_block << " B" << std::endl;
+        std::cout << "[INFO] Shared memory used per block: " << shared_memory_per_block << " B" << std::endl;
+        std::cout << "[INFO] Shared memory used for shift registers per block: " << shift_registers_block_usage * num_sensors_per_block << " B" << std::endl;
+        std::cout << "[INFO] Shared memory used for shift registers positions per block: " << shift_registers_pos_block_usage * num_sensors_per_block << " B" << std::endl;
+        std::cout << "[INFO] Shared memory used for correlations per block: " << correlations_block_usage * num_sensors_per_block << " B" << std::endl;
+        std::cout << "[INFO] Shared memory used for accumulators per block: " << accumulators_block_usage * num_sensors_per_block << " B" << std::endl;
         std::cout << "[INFO] --------------------------------------" << std::endl;
 
     }
