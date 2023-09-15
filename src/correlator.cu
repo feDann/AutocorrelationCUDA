@@ -166,8 +166,8 @@ Correlator<T>::Correlator(const int t_num_bins, const int t_bin_size, const int 
     packet_size = t_packet_size;
     debug = t_debug;
 
-    max_tau = bin_size * std::pow(2, num_bins);
-    num_taus = bin_size * num_bins;
+    max_tau = (bin_size/M) * std::pow(2, num_bins);
+    num_taus = (((num_bins-1) * (bin_size/M) + bin_size));
 
     int max_shared_mem_per_block = std::floor((double)device_properties.sharedMemPerMultiprocessor / device_properties.multiProcessorCount); // Used to achieve maximum MP usage
 
@@ -261,7 +261,7 @@ void Correlator<T>::alloc(){
 
     CHECK(cudaMalloc(&d_accumulators, num_bins * num_sensors * sizeof(T)));
 
-    CHECK(cudaMalloc(&d_correlation, num_taus * num_sensors * sizeof(T)));
+    CHECK(cudaMalloc(&d_correlation, num_bins * bin_size * num_sensors * sizeof(T)));
 
     CHECK(cudaMalloc(&d_new_values, packet_size * num_sensors * sizeof(T)));
 
@@ -272,14 +272,14 @@ void Correlator<T>::alloc(){
 
     CHECK(cudaMemset(d_accumulators, 0, num_bins * num_sensors * sizeof(T)));
 
-    CHECK(cudaMemset(d_correlation, 0 , num_taus * num_sensors * sizeof(T)));
+    CHECK(cudaMemset(d_correlation, 0 , num_bins * bin_size * num_sensors * sizeof(T)));
 
     CHECK(cudaMemset(d_new_values,0,  packet_size * num_sensors * sizeof(T)));
 
 
     if (debug) std::cout << "[INFO] Alocating device arrays" << std::endl;
 
-    correlation = (T*)malloc(num_taus * num_sensors * sizeof(T));
+    correlation = (T*)malloc(num_bins * bin_size * num_sensors * sizeof(T));
 
 };
 
@@ -345,13 +345,13 @@ void Correlator<T>::reset(){
 
     CHECK(cudaMemset(d_accumulators, 0, num_bins * num_sensors * sizeof(T)));
 
-    CHECK(cudaMemset(d_correlation, 0 , num_taus * num_sensors * sizeof(T)));
+    CHECK(cudaMemset(d_correlation, 0 , num_bins * bin_size * num_sensors * sizeof(T)));
     
     CHECK(cudaMemset(d_new_values, 0 , packet_size * num_sensors * sizeof(T)));
 
     if (debug) std::cout << "[INFO] Resetting all host arrays to zero" << std::endl;
 
-    memset(correlation, 0, num_taus * num_sensors * sizeof(T));
+    memset(correlation, 0, num_bins * bin_size * num_sensors * sizeof(T));
 
     instants_processed = 0;
     transfered = false;
