@@ -212,10 +212,7 @@ Correlator<T>::Correlator(const int t_num_bins, const int t_bin_size, const int 
     assert(shared_memory_per_block <= device_properties.sharedMemPerBlock && "ERROR: current configuration exceed device shared memory limits");
     assert(threads_per_block.x * threads_per_block.y < device_properties.maxThreadsPerBlock && "ERROR: current configuration exceed device max num thread per block");
     assert(number_of_blocks.x < device_properties.maxGridSize[0] && "ERROR: current configuration exceed device max number of blocks");
-
-    if (debug && num_sensors_per_block <= MIN_SENSORS_PER_BOOCK ) {
-        std::cout << "[WARNING] num_sensors_per_block is low, consider changing the current configuration of bin_size and num_bins" << std::endl;
-    }    
+   
 };
 
 template <typename T>

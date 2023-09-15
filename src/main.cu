@@ -11,7 +11,7 @@ using clock_type = chrono::high_resolution_clock;
 
 int main (int argc, char* argv[]){
     Options options(argc, argv);
-    Correlator<uint32_t> correlator(options.num_bins, options.bin_size * 2, options.num_sensors, options.packet_size, 0, options.debug);
+    Correlator<uint32_t> correlator(options.num_bins + 1, options.bin_size, options.num_sensors, options.packet_size, 0, options.debug);
     
     if (options.debug) std::cout << "[INFO] Reading input file" << std::endl;
     std::vector<uint32_t> data = utils::parse_csv<uint32_t>(options.input_file);
@@ -32,8 +32,10 @@ int main (int argc, char* argv[]){
 
         auto start = clock_type::now();
 
-        if (options.debug) std::cout << "[INFO] Starting iteration: " << i << std::endl;
-
+        if (options.debug) {            
+                std::cout << "[INFO] --------------------------------------" << std::endl;
+                std::cout << "[INFO] Starting iteration: " << i << std::endl;
+        }
         for (size_t j = 0; j < total_packets; ++j){
             if (options.debug) std::cout << "[INFO] Executing packet " << j << std::endl;
 
@@ -52,7 +54,7 @@ int main (int argc, char* argv[]){
 
     if (options.results) {
         std::ofstream output_file(options.output_file);
-		auto taus = utils::generate_taus(total_instants, options.bin_size * 2, options.num_bins);
+		auto taus = utils::generate_taus(total_instants, options.bin_size, options.num_bins);
 
 		for (int lag = 0; lag < taus.size(); lag++){
 			output_file << taus[lag];

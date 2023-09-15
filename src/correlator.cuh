@@ -4,7 +4,6 @@
 #include <iostream>
 
 #define M 2 // Number of lag coalesced
-#define MIN_SENSORS_PER_BOOCK 4
 namespace MultiTau {
 
 
