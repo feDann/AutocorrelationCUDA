@@ -1,68 +1,53 @@
 #!/bin/sh
 
+set -e
+
+TIMEPOINTS="10 100 1000 2048 10000 30000"
 
 NVIDIA_SMI_ARGS="-lms 1 --format=csv --query-gpu=timestamp,power.draw,utilization.gpu,utilization.memory,memory.total,memory.free,memory.used"
-AUTOCORR_ARGS="-I 30 -r"
-OUTPUT_FOLDER="output/g32-l16"
+OUTPUT_FOLDER="output"
+INPUT_FOLDER="../input"
+
+
+LEVELS_CONFIG="8 10 16"
+GROUP_SIZE_CONFIG="8 16 32"
+
+
+echo "Compiling..."
 
 make
 
-if [ ! -d "$OUTPUT_FOLDER" ]; then
-    mkdir -p "$OUTPUT_FOLDER"
-    echo "Folder created: $OUTPUT_FOLDER"
-fi
+echo "-----------------------------------"
 
-echo "Running for 10.csv"
 
-nvidia-smi $NVIDIA_SMI_ARGS -f "${OUTPUT_FOLDER}/10-utilization.csv" & pid2=$!
-./main -p 10 -i ../input/10.csv  -o "${OUTPUT_FOLDER}/10.csv" $AUTOCORR_ARGS > "${OUTPUT_FOLDER}/10" & pid1=$!
+for TIMEPOINT in $TIMEPOINTS; do
 
-wait $pid1
-sleep 1
-kill $pid2
+    echo "Running benchmarks for $TIMEPOINT timepoints"
+    AUTOCORR_ARGS="-I 30 -r -p ${TIMEPOINT}"
 
-sleep 1
+    for level in $LEVELS_CONFIG; do
+        for group in $GROUP_SIZE_CONFIG; do
 
-echo "Running for 100.csv"
+            CONFIG_OUTPUT="$OUTPUT_FOLDER/g$group-l$level"
 
-nvidia-smi $NVIDIA_SMI_ARGS -f "${OUTPUT_FOLDER}/100-utilization.csv" & pid4=$!
-./main -p 100 -i ../input/100.csv  -o "${OUTPUT_FOLDER}/100.csv" $AUTOCORR_ARGS > "${OUTPUT_FOLDER}/100" & pid3=$!
+            if [ ! -d "$CONFIG_OUTPUT" ]; then
+                mkdir -p "$CONFIG_OUTPUT"
+                echo "Folder created: $CONFIG_OUTPUT"
+            fi
 
-wait $pid3
-sleep 1
-kill $pid4
+            echo "    Running current config: -l $level -g $group for $TIMEPOINT timepoints"
 
-sleep 1
+            nvidia-smi $NVIDIA_SMI_ARGS -f "${CONFIG_OUTPUT}/${TIMEPOINT}-utilization.csv" & pid2=$!
+            ./bin/main $AUTOCORR_ARGS -i "${INPUT_FOLDER}/${TIMEPOINT}.csv"  -l "${level}" -g "${group}" -o "${CONFIG_OUTPUT}/${TIMEPOINT}.csv" > "${CONFIG_OUTPUT}/${TIMEPOINT}" & pid1=$!
 
-echo "Running for 1000.csv"
 
-nvidia-smi $NVIDIA_SMI_ARGS -f "${OUTPUT_FOLDER}/1000-utilization.csv" & pid6=$!
-./main -p 1000 -i ../input/1000.csv  -o "${OUTPUT_FOLDER}/1000.csv" $AUTOCORR_ARGS > "${OUTPUT_FOLDER}/1000" & pid5=$!
+            wait $pid1
+            sleep 1
+            kill $pid2
 
-wait $pid5
-sleep 1
-kill $pid6
+            sleep 1
 
-sleep 1
+        done
+    done
 
-echo "Running for 10000.csv"
-
-nvidia-smi $NVIDIA_SMI_ARGS -f "${OUTPUT_FOLDER}/10000-utilization.csv" & pid8=$!
-./main -p 10000 -i ../input/10000.csv  -o "${OUTPUT_FOLDER}/10000.csv" $AUTOCORR_ARGS > "${OUTPUT_FOLDER}/10000" & pid7=$!
-
-wait $pid7
-sleep 1
-kill $pid8
-
-sleep 1
-
-echo "Running for 30000.csv"
-
-nvidia-smi $NVIDIA_SMI_ARGS -f "${OUTPUT_FOLDER}/30000-utilization.csv" & pid10=$!
-./main -p 30000 -i ../input/30000.csv  -o "${OUTPUT_FOLDER}/30000.csv" $AUTOCORR_ARGS > "${OUTPUT_FOLDER}/30000" & pid9=$!
-
-wait $pid9
-sleep 1
-kill $pid10
-
-echo "Completed!"
+done

@@ -1,5 +1,4 @@
-#ifndef AUTOCORRELATION_UTILS
-#define AUTOCORRELATION_UTILS
+#pragma once
 
 #include <iostream>
 #include <vector>
@@ -9,13 +8,10 @@
 #include <stdexcept>
 #include <cmath>
 
-#include "Definitions.h"
-
-
 namespace utils {
 
     template <typename T> 
-    T convertTo(const std::string &cell) {
+    T convert_to(const std::string &cell) {
         std::istringstream ss(cell);
         T value;
 
@@ -29,13 +25,13 @@ namespace utils {
     }
 
     template <typename T>
-    std::vector<T> parseCSVLine(const std::string &line){
+    std::vector<T> parse_csv_line(const std::string &line){
         std::vector<T> result;
         std::stringstream lineStream(line);
         std::string cell;
 
         while(std::getline(lineStream, cell, ',')){
-            result.push_back(convertTo<T>(cell));
+            result.push_back(convert_to<T>(cell));
         }
 
         return result;
@@ -43,7 +39,7 @@ namespace utils {
 
 
     template <typename T>
-    std::vector<T> parseCSV(const std::string &filepath) {
+    std::vector<T> parse_csv(const std::string &filepath) {
 
         std::vector<T> result;
         std::ifstream file(filepath);
@@ -56,7 +52,7 @@ namespace utils {
 
         //Read data into result array
         while(std::getline(file, line)) {
-            std::vector<T> lineData = parseCSVLine<T>(line);
+            std::vector<T> lineData = parse_csv_line<T>(line);
             result.insert(result.end(), lineData.begin(), lineData.end());
         }
 
@@ -65,17 +61,6 @@ namespace utils {
 
     }
 
-
-    std::vector<uint8_t> generateRandomData(const int instants, const int sensors) {
-        std::vector<uint8_t> result;
-
-        for (int i = 0; i < instants; ++i) {
-            for (int j = 0; j < sensors; ++j) {
-                result.push_back((i%7) +1);
-            }
-        }
-        return result;
-    }
 
     template<typename T>
     std::vector<T> slice(std::vector<T> const &v, int m, int n)
@@ -88,17 +73,25 @@ namespace utils {
     }
 
 
-    std::vector<uint16_t> generateTaus(size_t fullTimeLength, size_t binSize, size_t numBins) {
+    std::vector<uint16_t> generate_taus(const size_t full_time_len, const size_t bin_size, const size_t num_bins, const size_t m = 2) {
         std::vector<uint16_t> taus;
-        int32_t tau = -1;
+        size_t max_lag = std::pow((double)m, num_bins - 1) * (bin_size/2) + bin_size;        
 
-        size_t maxLag = std::pow(2, numBins) * binSize;
-        
-        for (size_t i = 0; i < numBins; ++i) {
-            for(size_t j = 0; j < binSize; ++j){
+        for (size_t i = 0; i < bin_size; ++i){
+            if (i > full_time_len){
+                    return taus;
+            }
+            taus.push_back(i);
+        }
 
-                tau += std::pow(2, std::floor((i * binSize)/ binSize));
-                if (tau > maxLag || tau >= fullTimeLength){
+        for (size_t i = 1; i < num_bins; ++i) {
+            for(size_t j = (bin_size/2); j < bin_size; ++j){               
+
+                size_t p = std::pow((double)m,i);
+                size_t tau = j * p;
+                if (tau > max_lag || tau > full_time_len - p){
+
+
                     return taus;
                 }
                 taus.push_back(tau);
@@ -108,4 +101,3 @@ namespace utils {
         return taus;
     }
 }
-#endif

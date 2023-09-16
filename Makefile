@@ -1,17 +1,21 @@
-NVCC=nvcc
-CXX=g++
+CXX=nvcc
 
-CXXFLAGS=-Ofast -std=c++11 -D_MWAITXINTRIN_H_INCLUDED -D_FORCE_INLINES
-LIBS=-lcudart
-FLAGS=-Xcompiler -fopenmp -D_MWAITXINTRIN_H_INCLUDED -D_FORCE_INLINES
+CUDAFLAGS=--ptxas-options=-v -m64 -arch compute_61 -code sm_61 -Xptxas -dlcm=ca -Xcompiler -D_FORCE_INLINES -lineinfo --expt-relaxed-constexpr
 
-CUDAFLAGS=--ptxas-options=-v -O4 -m64 -arch compute_61 -code sm_61 -Xptxas -dlcm=ca -Xcompiler -D_FORCE_INLINES -lineinfo
+BIN_FOLDER=bin
+SRC_FOLDER=src
 
-all: main
+FILES=${SRC_FOLDER}/main.cu ${SRC_FOLDER}/correlator.cu
+
+all: release
 
 clean:
-	rm -f *.o main out_data.txt timer_out.txt
+	rm  -rf $(BIN_FOLDER)
 
-main: src/CudaInput.h src/InputVector.h src/BinGroupsMultiSensorMemory.h  src/DataFile.h  src/Timer.h src/Main.cu src/SensorsDataPacket.h src/ResultArray.h src/options.hpp src/utils.hpp src/Definitions.h
-	$(NVCC) $(CUDAFLAGS) src/Main.cu -o main
+release:
+	mkdir -p $(BIN_FOLDER)
+	$(CXX) $(FILES) $(CUDAFLAGS) -O3 -o $(BIN_FOLDER)/main
 
+debug:
+	mkdir -p $(BIN_FOLDER)
+	$(CXX) $(FILES) $(CUDAFLAGS) -D_DEBUG_BUILD -g -G -o $(BIN_FOLDER)/main 

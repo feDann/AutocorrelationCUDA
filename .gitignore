@@ -4,3 +4,5 @@ out/
 *.txt
 main
 documentation/Doxygen/
+bin/
+.vscode/
