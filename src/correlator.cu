@@ -131,7 +131,7 @@ MultiTau::correlate<T>(T * new_values, const int timepoints, int instants_proces
 
                 block_accumulators[SHARED_OFF_B(sensor, bin-1, num_sensors_per_block)] = 0;
 
-                block_correlation[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)] +=  block_shift[SHARED_OFF(sensor, bin, insert_channel, bin_size, num_sensors_per_block)] * block_shift[SHARED_OFF(sensor, bin, (insert_channel - channel + bin_size) & (bin_size -1), bin_size, num_sensors_per_block)] * (channel - bin_size/M >= 0); // only half of the channel needs to be computed, the last member of the multiplication is used to remove garbage fromunused channels
+                block_correlation[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)] +=  block_shift[SHARED_OFF(sensor, bin, insert_channel, bin_size, num_sensors_per_block)] * block_shift[SHARED_OFF(sensor, bin, (insert_channel - channel + bin_size) & (bin_size -1), bin_size, num_sensors_per_block)] * (channel - bin_size/M >= 0); // only half of the channel needs to be computed, the last member of the multiplication is used to remove garbage from unused channels
                 block_shift_pos[SHARED_OFF_B(sensor, bin, num_sensors_per_block)] = (insert_channel + 1) & (bin_size-1);
 
             }
@@ -211,8 +211,7 @@ Correlator<T>::Correlator(const int t_num_bins, const int t_bin_size, const int 
     
     assert(shared_memory_per_block <= device_properties.sharedMemPerBlock && "ERROR: current configuration exceed device shared memory limits");
     assert(threads_per_block.x * threads_per_block.y < device_properties.maxThreadsPerBlock && "ERROR: current configuration exceed device max num thread per block");
-    assert(number_of_blocks.x < device_properties.maxGridSize[0] && "ERROR: current configuration exceed device max number of blocks");
-   
+
 };
 
 template <typename T>
