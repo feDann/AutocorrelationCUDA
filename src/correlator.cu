@@ -75,10 +75,10 @@ MultiTau::correlate<T>(T * new_values, const int timepoints, int instants_proces
     // Due to templates memory needs to be assigned as unsigned char 
     extern __shared__  unsigned char total_shared_memory[];
 
-    int * block_shift_pos = reinterpret_cast<int *>(&total_shared_memory);
-    T * block_shift = reinterpret_cast<T *>(&block_shift_pos[num_sensors_per_block * num_bins]);
+    T * block_shift = reinterpret_cast<T *>(&total_shared_memory);
     T * block_correlation = &block_shift[num_sensors_per_block * num_bins * bin_size];
     T * block_accumulators = &block_correlation[num_sensors_per_block * num_bins * bin_size];
+    int * block_shift_pos = reinterpret_cast<int *>(&block_accumulators[num_sensors_per_block * num_bins]);
 
     int clamp_mask = first_block_sensor + num_sensors_per_block >= num_sensors;
     num_sensors_per_block = (num_sensors - first_block_sensor) * clamp_mask + num_sensors_per_block * (1 - clamp_mask);
@@ -139,7 +139,7 @@ MultiTau::correlate<T>(T * new_values, const int timepoints, int instants_proces
         }
         
         // Copy correlator arrays from global memory to shared memory
-        for (size_t bin = 0; bin < num_bins; ++bin) {
+        for (int bin = 0; bin < num_bins; ++bin) {
             shift_register[GLOBAL_OFF(sensor, bin, channel, bin_size, num_sensors_per_block, num_bins, first_block_sensor)] = block_shift[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)];
             correlation[GLOBAL_OFF(sensor, bin, channel, bin_size, num_sensors_per_block, num_bins, first_block_sensor)] = block_correlation[SHARED_OFF(sensor, bin, channel, bin_size, num_sensors_per_block)];
 
@@ -355,12 +355,10 @@ void Correlator<T>::reset(){
 };
 
 // Needed for the template
-template class Correlator<int8_t>;
 template class Correlator<int16_t>;
 template class Correlator<int32_t>;
 template class Correlator<int64_t>;
 
-template class Correlator<uint8_t>;
 template class Correlator<uint16_t>;
 template class Correlator<uint32_t>;
 template class Correlator<uint64_t>;
