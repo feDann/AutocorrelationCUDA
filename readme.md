@@ -10,7 +10,7 @@ This CUDA application is designed to efficiently calculate the autocorrelation f
 
 ## Features
 
-- Fast computation of teh autocorrelation function using CUDA parallel processing
+- Fast computation of the autocorrelation function using CUDA parallel processing
 - Support for processing a full time series or packets of data, allowing flexibility in data handling
 - Customizable parameters to fine-tune the analysis for your specific experiment
 
@@ -34,35 +34,33 @@ To calculate the autocorrelation, you need to provide your input data in a compa
 The application can be run using the following command:
 
 ``` console
-
 ./bin/main -p [PACKET_LENGTH] -l [NUM_BINS] -g [BIN_SIZE] -i [INPUT_FILE] -r -o [OUTPUT_FILE]
-
 ```
 
 All the available flags are:
 ```
-    [--debug, -d]           Activate debug prints
+[--debug, -d]           Activate debug prints
 
-    [--results, -r]         Prints to stdout the results of the autocorrelation
+[--results, -r]         Prints to stdout the results of the autocorrelation
 
-    [--packets, -p]         Number of instant used per packets
+[--packets, -p]         Number of instant used per packets
 
-    [--input_file, -i]      Name of the input file containing the sensor data
-                            for the calculation of the autocorrelation
+[--input_file, -i]      Name of the input file containing the sensor data
+                        for the calculation of the autocorrelation
 
-    [--output-file, -o]     Name of the output file. Correlation result will be saved into a csv file
+[--output-file, -o]     Name of the output file. Correlation result will be saved into a csv file
 
-    [--iterations, -I]      Number of times that the calculation is repeated. If it is greater than
-                            one the calculation of the autocorrelation will be repeated multiple
-                            times on the same data
+[--iterations, -I]      Number of times that the calculation is repeated. If it is greater than
+                        one the calculation of the autocorrelation will be repeated multiple
+                        times on the same data
 
-    [--sensors, -s]         Number of Sensors present in the matrix of sensors
+[--sensors, -s]         Number of Sensors present in the matrix of sensors
 
-    [--groups, -l]          Number of bins used for each correlator of the sensor matrix
+[--groups, -l]          Number of bins used for each correlator of the sensor matrix
 
-    [--group_size, -g]      Size of the bins for each correlator
+[--group_size, -g]      Size of the bins for each correlator
 
-    [--help, -h]            Print this help message
+[--help, -h]            Print this help message
 ```
 ## Correlator Data Structure
 
