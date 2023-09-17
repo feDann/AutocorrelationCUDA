@@ -11,10 +11,10 @@ using clock_type = chrono::high_resolution_clock;
 
 int main (int argc, char* argv[]){
     Options options(argc, argv);
-    Correlator<uint32_t> correlator(options.num_bins + 1, options.bin_size, options.num_sensors, options.packet_size, 0, options.debug);
+    Correlator<float> correlator(options.num_bins + 1, options.bin_size, options.num_sensors, options.packet_size, 0, options.debug);
     
     if (options.debug) std::cout << "[INFO] Reading input file" << std::endl;
-    std::vector<uint32_t> data = utils::parse_csv<uint32_t>(options.input_file);
+    std::vector<float> data = utils::parse_csv<float>(options.input_file);
 
     size_t total_instants = data.size() / options.num_sensors;
     size_t total_packets = total_instants / options.packet_size;    
