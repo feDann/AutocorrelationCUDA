@@ -1,6 +1,7 @@
 CXX=nvcc
 
-CUDAFLAGS=--ptxas-options=-v -m64 -arch compute_61 -code sm_61 -Xptxas -dlcm=ca -Xcompiler -D_FORCE_INLINES -lineinfo --expt-relaxed-constexpr
+ARCH=-arch compute_61 -code sm_61
+CUDAFLAGS=--ptxas-options=-v -m64 $(ARCH) -Xptxas -dlcm=ca -Xcompiler -D_FORCE_INLINES -lineinfo --expt-relaxed-constexpr
 
 BIN_FOLDER=bin
 SRC_FOLDER=src
