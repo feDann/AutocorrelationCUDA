@@ -1,7 +1,7 @@
 # AutocorrelationCUDA
 
 > 
-> Based on the previous work of [**Lapo Falcone**](github.com/Lapo9) and [**Gianpaolo Cugola**](github.com/cugola). The original work with a more in depth explaination can be found [here](github.com/Lapo9/AutocorrelationCUDA)
+> Based on the previous work of [**Lapo Falcone**](https://github.com/Lapo9) and [**Gianpaolo Cugola**](https://github.com/cugola). The original work with a more in depth explaination can be found [here](https://github.com/Lapo9/AutocorrelationCUDA)
 >
 ## Overview
 
